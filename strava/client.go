@@ -1,0 +1,135 @@
+package strava
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
+	"github.com/gabrieleangeletti/stride"
+)
+
+func NewClient(accessToken string) *client {
+	return &client{
+		BaseUrl:     "https://www.strava.com/api/v3",
+		AccessToken: accessToken,
+	}
+}
+
+type client struct {
+	BaseUrl     string
+	AccessToken string
+}
+
+func (p *client) GetAthlete() (*Athlete, error) {
+	url := fmt.Sprintf("%s/athlete", p.BaseUrl)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+p.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, stride.ErrRateLimitExceeded
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get athlete: %s", resp.Status)
+	}
+
+	var athlete Athlete
+	if err := json.NewDecoder(resp.Body).Decode(&athlete); err != nil {
+		return nil, err
+	}
+
+	return &athlete, nil
+}
+
+func (p *client) GetActivities(startTime, endTime time.Time, page int) ([]ActivitySummary, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/athlete/activities", p.BaseUrl))
+
+	params := url.Values{}
+	params.Add("after", fmt.Sprintf("%d", startTime.Unix()))
+	params.Add("before", fmt.Sprintf("%d", endTime.Unix()))
+	params.Add("page", fmt.Sprintf("%d", page))
+	params.Add("per_page", "200")
+
+	u.RawQuery = params.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+p.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, stride.ErrRateLimitExceeded
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get activities: %s", resp.Status)
+	}
+
+	var activities []ActivitySummary
+	if err := json.NewDecoder(resp.Body).Decode(&activities); err != nil {
+		return nil, err
+	}
+
+	return activities, nil
+}
+
+func (p *client) GetActivityStreams(id string) (*ActivityStream, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/activities/%s/streams", p.BaseUrl, id))
+
+	params := url.Values{}
+	params.Add("keys", "velocity_smooth,cadence,distance,altitude,heartrate,time")
+	params.Add("key_by_type", "true")
+
+	u.RawQuery = params.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+p.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, stride.ErrRateLimitExceeded
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get activity streams: %s", resp.Status)
+	}
+
+	var streams ActivityStream
+	if err := json.NewDecoder(resp.Body).Decode(&streams); err != nil {
+		return nil, err
+	}
+
+	return &streams, nil
+}
