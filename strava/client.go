@@ -22,14 +22,15 @@ type client struct {
 	AccessToken string
 }
 
-func (p *client) GetAthlete() (*Athlete, error) {
-	url := fmt.Sprintf("%s/athlete", p.BaseUrl)
-	req, err := http.NewRequest("GET", url, nil)
+func (c *client) GetAthlete() (*Athlete, error) {
+	u := fmt.Sprintf("%s/athlete", c.BaseUrl)
+
+	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+p.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -54,8 +55,8 @@ func (p *client) GetAthlete() (*Athlete, error) {
 	return &athlete, nil
 }
 
-func (p *client) GetActivities(startTime, endTime time.Time, page int) ([]ActivitySummary, error) {
-	u, _ := url.Parse(fmt.Sprintf("%s/athlete/activities", p.BaseUrl))
+func (c *client) GetActivities(startTime, endTime time.Time, page int) ([]ActivitySummary, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/athlete/activities", c.BaseUrl))
 
 	params := url.Values{}
 	params.Add("after", fmt.Sprintf("%d", startTime.Unix()))
@@ -70,7 +71,7 @@ func (p *client) GetActivities(startTime, endTime time.Time, page int) ([]Activi
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+p.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -95,8 +96,8 @@ func (p *client) GetActivities(startTime, endTime time.Time, page int) ([]Activi
 	return activities, nil
 }
 
-func (p *client) GetActivityStreams(id string) (*ActivityStream, error) {
-	u, _ := url.Parse(fmt.Sprintf("%s/activities/%s/streams", p.BaseUrl, id))
+func (c *client) GetActivityStreams(id string) (*ActivityStream, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/activities/%s/streams", c.BaseUrl, id))
 
 	params := url.Values{}
 	params.Add("keys", "velocity_smooth,cadence,distance,altitude,heartrate,time")
@@ -109,7 +110,7 @@ func (p *client) GetActivityStreams(id string) (*ActivityStream, error) {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+p.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

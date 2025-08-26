@@ -11,6 +11,10 @@ type TokenResponse struct {
 	Athlete      Athlete `json:"athlete"`
 }
 
+type WebhookRegistrationResponse struct {
+	ID int `json:"id"`
+}
+
 type Athlete struct {
 	ID            int       `json:"id"`
 	Username      string    `json:"username"`

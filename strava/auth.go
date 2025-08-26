@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 func NewAuth(clientID, clientSecret string) *auth {
@@ -20,8 +21,7 @@ type auth struct {
 }
 
 func (a *auth) GetAuthorizationUrl(redirectURI string) *url.URL {
-	baseUrl := "https://www.strava.com/oauth/authorize"
-	u, _ := url.Parse(baseUrl)
+	u, _ := url.Parse("https://www.strava.com/oauth/authorize")
 
 	params := url.Values{}
 	params.Add("client_id", a.ClientID)
@@ -36,8 +36,7 @@ func (a *auth) GetAuthorizationUrl(redirectURI string) *url.URL {
 }
 
 func (a *auth) ExchangeCodeForAccessToken(code string) (*TokenResponse, error) {
-	baseUrl := "https://www.strava.com/oauth/token"
-	u, _ := url.Parse(baseUrl)
+	u, _ := url.Parse("https://www.strava.com/oauth/token")
 
 	params := url.Values{}
 	params.Add("client_id", a.ClientID)
@@ -63,17 +62,16 @@ func (a *auth) ExchangeCodeForAccessToken(code string) (*TokenResponse, error) {
 		return nil, fmt.Errorf("failed to exchange code for access token: %s", resp.Status)
 	}
 
-	var tokenResponse TokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+	var r TokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return nil, err
 	}
 
-	return &tokenResponse, nil
+	return &r, nil
 }
 
 func (a *auth) RefreshToken(refreshToken string) (*TokenResponse, error) {
-	baseUrl := "https://www.strava.com/oauth/token"
-	u, _ := url.Parse(baseUrl)
+	u, _ := url.Parse("https://www.strava.com/oauth/token")
 
 	params := url.Values{}
 	params.Add("client_id", a.ClientID)
@@ -99,10 +97,107 @@ func (a *auth) RefreshToken(refreshToken string) (*TokenResponse, error) {
 		return nil, fmt.Errorf("failed to refresh token: %s", resp.Status)
 	}
 
-	var tokenResponse TokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+	var r TokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return nil, err
 	}
 
-	return &tokenResponse, nil
+	return &r, nil
+}
+
+func (a *auth) RegisterWebhook(callbackURL, verifyToken string) (*WebhookRegistrationResponse, error) {
+	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions")
+
+	params := url.Values{}
+	params.Add("client_id", a.ClientID)
+	params.Add("client_secret", a.ClientSecret)
+	params.Add("callback_url", callbackURL)
+	params.Add("verify_token", verifyToken)
+
+	u.RawQuery = params.Encode()
+
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to register webhook: %s", resp.Status)
+	}
+
+	var r WebhookRegistrationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	return &r, nil
+}
+
+func (a *auth) GetWebhookSubscriptions() (map[string]any, error) {
+	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions")
+
+	params := url.Values{}
+	params.Add("client_id", a.ClientID)
+	params.Add("client_secret", a.ClientSecret)
+
+	u.RawQuery = params.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get webhook subscriptions: %s", resp.Status)
+	}
+
+	var r map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func (a *auth) DeleteWebhook(subscriptionID int) error {
+	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions/id")
+
+	params := url.Values{}
+	params.Add("id", strconv.Itoa(subscriptionID))
+	params.Add("client_id", a.ClientID)
+	params.Add("client_secret", a.ClientSecret)
+
+	u.RawQuery = params.Encode()
+
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("failed to delete webhook subscription: %s", resp.Status)
+	}
+
+	return nil
 }
