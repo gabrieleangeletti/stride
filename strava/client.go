@@ -3,6 +3,7 @@ package strava
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -44,7 +45,8 @@ func (c *client) GetAthlete() (*Athlete, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get athlete: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get athlete: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
 	var athlete Athlete
@@ -85,7 +87,8 @@ func (c *client) GetActivities(startTime, endTime time.Time, page int) ([]Activi
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get activities: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get activities: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
 	var activities []ActivitySummary
@@ -124,7 +127,8 @@ func (c *client) GetActivityStreams(id string) (*ActivityStream, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get activity streams: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get activity streams: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
 	var streams ActivityStream

@@ -3,6 +3,7 @@ package strava
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -59,7 +60,8 @@ func (a *auth) ExchangeCodeForAccessToken(code string) (*TokenResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to exchange code for access token: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to exchange code for access token: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
 	var r TokenResponse
@@ -94,7 +96,8 @@ func (a *auth) RefreshToken(refreshToken string) (*TokenResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to refresh token: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to refresh token: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
 	var r TokenResponse
@@ -129,7 +132,8 @@ func (a *auth) RegisterWebhook(callbackURL, verifyToken string) (*WebhookRegistr
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to register webhook: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to register webhook: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
 	var r WebhookRegistrationResponse
@@ -162,7 +166,8 @@ func (a *auth) GetWebhookSubscriptions() (map[string]any, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get webhook subscriptions: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get webhook subscriptions: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
 	var r map[string]any
@@ -196,7 +201,8 @@ func (a *auth) DeleteWebhook(subscriptionID int) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("failed to delete webhook subscription: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to delete webhook subscription: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
 	return nil
