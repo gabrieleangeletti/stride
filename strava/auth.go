@@ -131,7 +131,7 @@ func (a *auth) RegisterWebhook(callbackURL, verifyToken string) (*WebhookRegistr
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to register webhook: %s\n%s", resp.Status, string(bodyBytes))
 	}
