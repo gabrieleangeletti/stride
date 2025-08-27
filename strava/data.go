@@ -15,6 +15,31 @@ type WebhookRegistrationResponse struct {
 	ID int `json:"id"`
 }
 
+type WebhookObjectType string
+
+const (
+	WebhookActivity WebhookObjectType = "activity"
+	WebhookAthlete  WebhookObjectType = "athlete"
+)
+
+type WebhookAspectType string
+
+const (
+	WebhookCreate WebhookAspectType = "create"
+	WebhookUpdate WebhookAspectType = "update"
+	WebhookDelete WebhookAspectType = "delete"
+)
+
+type WebhookEvent struct {
+	ObjectType     WebhookObjectType `json:"object_type"`
+	ObjectID       int               `json:"object_id"` // For activity events, the activity's ID. For athlete events, the athlete's ID.
+	AspectType     WebhookAspectType `json:"aspect_type"`
+	Updates        map[string]any    `json:"updates"`
+	OwnerID        int               `json:"owner_id"`        // The athlete's ID.
+	SubscriptionID int               `json:"subscription_id"` // The push subscription ID that is receiving this event.
+	EventTime      int               `json:"event_time"`      // The time that the event occurred.
+}
+
 type Athlete struct {
 	ID            int       `json:"id"`
 	Username      string    `json:"username"`
