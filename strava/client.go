@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/gabrieleangeletti/stride"
@@ -57,7 +58,7 @@ func (c *client) GetAthlete() (*Athlete, error) {
 	return &athlete, nil
 }
 
-func (c *client) GetActivities(startTime, endTime time.Time, page int) ([]ActivitySummary, error) {
+func (c *client) GetActivitySummaries(startTime, endTime time.Time, page int) ([]ActivitySummary, error) {
 	u, _ := url.Parse(fmt.Sprintf("%s/athlete/activities", c.BaseUrl))
 
 	params := url.Values{}
@@ -99,8 +100,47 @@ func (c *client) GetActivities(startTime, endTime time.Time, page int) ([]Activi
 	return activities, nil
 }
 
-func (c *client) GetActivityStreams(id string) (*ActivityStream, error) {
-	u, _ := url.Parse(fmt.Sprintf("%s/activities/%s/streams", c.BaseUrl, id))
+func (c *client) GetActivitySummary(id int, includeAllEfforts bool) (*ActivitySummary, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/athlete/activities/%d", c.BaseUrl, id))
+
+	params := url.Values{}
+	params.Add("include_all_efforts", strconv.FormatBool(includeAllEfforts))
+
+	u.RawQuery = params.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, stride.ErrRateLimitExceeded
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get activities: %s\n%s", resp.Status, string(bodyBytes))
+	}
+
+	var activity ActivitySummary
+	if err := json.NewDecoder(resp.Body).Decode(&activity); err != nil {
+		return nil, err
+	}
+
+	return &activity, nil
+}
+
+func (c *client) GetActivityStreams(id int) (*ActivityStream, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d/streams", c.BaseUrl, id))
 
 	params := url.Values{}
 	params.Add("keys", "velocity_smooth,cadence,distance,altitude,heartrate,time")

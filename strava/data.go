@@ -48,14 +48,32 @@ const (
 )
 
 type WebhookEvent struct {
-	ObjectType     WebhookObjectType `json:"object_type"`
-	ObjectID       int               `json:"object_id"` // For activity events, the activity's ID. For athlete events, the athlete's ID.
-	AspectType     WebhookAspectType `json:"aspect_type"`
-	Updates        map[string]any    `json:"updates"`
-	OwnerID        int               `json:"owner_id"`        // The athlete's ID.
-	SubscriptionID int               `json:"subscription_id"` // The push subscription ID that is receiving this event.
-	EventTime      int               `json:"event_time"`      // The time that the event occurred.
+	ObjectType     WebhookObjectType  `json:"object_type"`
+	ObjectID       int                `json:"object_id"` // For activity events, the activity's ID. For athlete events, the athlete's ID.
+	AspectType     WebhookAspectType  `json:"aspect_type"`
+	Updates        WebhookEventUpdate `json:"updates"`
+	OwnerID        int                `json:"owner_id"`        // The athlete's ID.
+	SubscriptionID int                `json:"subscription_id"` // The push subscription ID that is receiving this event.
+	EventTime      int                `json:"event_time"`      // The time that the event occurred.
 }
+
+type WebhookEventUpdate interface {
+	isWebhookEventUpdate()
+}
+
+type WebhookEventActivityUpdate struct {
+	Title   string `json:"title"`
+	Type    string `json:"type"`
+	Private bool   `json:"private"`
+}
+
+func (WebhookEventActivityUpdate) isWebhookEventUpdate() {}
+
+type WebhookEventDeauthorization struct {
+	Authorized bool `json:"authorized"`
+}
+
+func (WebhookEventDeauthorization) isWebhookEventUpdate() {}
 
 type Athlete struct {
 	ID            int       `json:"id"`
