@@ -101,7 +101,7 @@ func (c *client) GetActivitySummaries(startTime, endTime time.Time, page int) ([
 }
 
 func (c *client) GetActivitySummary(id int, includeAllEfforts bool) (*ActivitySummary, error) {
-	u, _ := url.Parse(fmt.Sprintf("%s/athlete/activities/%d", c.BaseUrl, id))
+	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d", c.BaseUrl, id))
 
 	params := url.Values{}
 	params.Add("include_all_efforts", strconv.FormatBool(includeAllEfforts))
