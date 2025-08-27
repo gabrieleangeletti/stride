@@ -144,7 +144,7 @@ func (a *auth) RegisterWebhook(callbackURL, verifyToken string) (*WebhookRegistr
 	return &r, nil
 }
 
-func (a *auth) GetWebhookSubscriptions() (map[string]any, error) {
+func (a *auth) GetWebhookSubscriptions() ([]any, error) {
 	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions")
 
 	params := url.Values{}
@@ -170,7 +170,7 @@ func (a *auth) GetWebhookSubscriptions() (map[string]any, error) {
 		return nil, fmt.Errorf("failed to get webhook subscriptions: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
-	var r map[string]any
+	var r []any
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return nil, err
 	}
