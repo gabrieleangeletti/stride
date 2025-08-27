@@ -11,8 +11,25 @@ type TokenResponse struct {
 	Athlete      Athlete `json:"athlete"`
 }
 
+// Resource state, indicates level of detail. Possible values: 2 -> "summary", 3 -> "detail"
+type ResourceState int
+
+const (
+	ResourceStateSummary ResourceState = 2
+	ResourceStateDetail  ResourceState = 3
+)
+
 type WebhookRegistrationResponse struct {
 	ID int `json:"id"`
+}
+
+type WebhookSubscription struct {
+	ID            int           `json:"id"`
+	ApplicationID int           `json:"application_id"`
+	CallbackURL   string        `json:"callback_url"`
+	ResourceState ResourceState `json:"resource_state"`
+	CreatedAt     time.Time     `json:"created_at"`
+	UpdatedAt     time.Time     `json:"updated_at"`
 }
 
 type WebhookObjectType string
