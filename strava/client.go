@@ -12,27 +12,27 @@ import (
 	"github.com/gabrieleangeletti/stride"
 )
 
-func NewClient(accessToken string) *client {
-	return &client{
-		BaseUrl:     "https://www.strava.com/api/v3",
-		AccessToken: accessToken,
+func NewClient(accessToken string) *Client {
+	return &Client{
+		baseUrl:     "https://www.strava.com/api/v3",
+		accessToken: accessToken,
 	}
 }
 
-type client struct {
-	BaseUrl     string
-	AccessToken string
+type Client struct {
+	baseUrl     string
+	accessToken string
 }
 
-func (c *client) GetAthlete() (*Athlete, error) {
-	u := fmt.Sprintf("%s/athlete", c.BaseUrl)
+func (c *Client) GetAthlete() (*Athlete, error) {
+	u := fmt.Sprintf("%s/athlete", c.baseUrl)
 
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -58,8 +58,8 @@ func (c *client) GetAthlete() (*Athlete, error) {
 	return &athlete, nil
 }
 
-func (c *client) GetActivitySummaries(startTime, endTime time.Time, page int) ([]ActivitySummary, error) {
-	u, _ := url.Parse(fmt.Sprintf("%s/athlete/activities", c.BaseUrl))
+func (c *Client) GetActivitySummaries(startTime, endTime time.Time, page int) ([]ActivitySummary, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/athlete/activities", c.baseUrl))
 
 	params := url.Values{}
 	params.Add("after", fmt.Sprintf("%d", startTime.Unix()))
@@ -74,7 +74,7 @@ func (c *client) GetActivitySummaries(startTime, endTime time.Time, page int) ([
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -100,8 +100,8 @@ func (c *client) GetActivitySummaries(startTime, endTime time.Time, page int) ([
 	return activities, nil
 }
 
-func (c *client) GetActivitySummary(id int, includeAllEfforts bool) (*ActivitySummary, error) {
-	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d", c.BaseUrl, id))
+func (c *Client) GetActivitySummary(id int, includeAllEfforts bool) (*ActivitySummary, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d", c.baseUrl, id))
 
 	params := url.Values{}
 	params.Add("include_all_efforts", strconv.FormatBool(includeAllEfforts))
@@ -113,7 +113,7 @@ func (c *client) GetActivitySummary(id int, includeAllEfforts bool) (*ActivitySu
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -139,8 +139,8 @@ func (c *client) GetActivitySummary(id int, includeAllEfforts bool) (*ActivitySu
 	return &activity, nil
 }
 
-func (c *client) GetActivityStreams(id int) (*ActivityStream, error) {
-	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d/streams", c.BaseUrl, id))
+func (c *Client) GetActivityStreams(id int) (*ActivityStream, error) {
+	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d/streams", c.baseUrl, id))
 
 	params := url.Values{}
 	params.Add("keys", "velocity_smooth,cadence,distance,altitude,heartrate,time")
@@ -153,7 +153,7 @@ func (c *client) GetActivityStreams(id int) (*ActivityStream, error) {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
