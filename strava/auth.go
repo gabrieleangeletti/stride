@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
 func NewAuth(clientID, clientSecret string) *auth {
@@ -179,10 +178,9 @@ func (a *auth) GetWebhookSubscriptions() ([]WebhookSubscription, error) {
 }
 
 func (a *auth) DeleteWebhookSubscription(subscriptionID int) error {
-	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions/id")
+	u, _ := url.Parse(fmt.Sprintf("https://www.strava.com/api/v3/push_subscriptions/%d", subscriptionID))
 
 	params := url.Values{}
-	params.Add("id", strconv.Itoa(subscriptionID))
 	params.Add("client_id", a.ClientID)
 	params.Add("client_secret", a.ClientSecret)
 
