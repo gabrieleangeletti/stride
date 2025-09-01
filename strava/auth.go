@@ -108,7 +108,7 @@ func (a *auth) RefreshToken(refreshToken string) (*TokenResponse, error) {
 	return &r, nil
 }
 
-func (a *auth) RegisterWebhook(callbackURL, verifyToken string) (*WebhookRegistrationResponse, error) {
+func (a *auth) RegisterWebhookSubscription(callbackURL, verifyToken string) (*WebhookRegistrationResponse, error) {
 	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions")
 
 	params := url.Values{}
@@ -178,7 +178,7 @@ func (a *auth) GetWebhookSubscriptions() ([]WebhookSubscription, error) {
 	return r, nil
 }
 
-func (a *auth) DeleteWebhook(subscriptionID int) error {
+func (a *auth) DeleteWebhookSubscription(subscriptionID int) error {
 	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions/id")
 
 	params := url.Values{}
