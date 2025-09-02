@@ -1,8 +1,12 @@
 package strava
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gabrieleangeletti/stride"
 )
 
 type TokenResponse struct {
@@ -98,7 +102,7 @@ type ActivitySummary struct {
 	StartDate                  time.Time   `json:"start_date"`
 	StartDateLocal             time.Time   `json:"start_date_local"`
 	Timezone                   string      `json:"timezone"`
-	UtcOffset                  float64     `json:"utc_offset"`
+	UtcOffset                  float64     `json:"utc_offset"` // seconds
 	LocationCity               string      `json:"location_city"`
 	LocationState              string      `json:"location_state"`
 	LocationCountry            string      `json:"location_country"`
@@ -152,6 +156,60 @@ func (a ActivitySummary) IanaTimezone() string {
 	parts := strings.Split(a.Timezone, " ")
 
 	return parts[len(parts)-1]
+}
+
+func (a ActivitySummary) ToEnduranceActivity() (*stride.EnduranceOutdoorActivity, error) {
+	sport, err := a.mapSportType()
+	if err != nil {
+		return nil, err
+	}
+
+	if !stride.IsEnduranceOutdoorActivity(sport) {
+		return nil, stride.ErrActivityIsNotOutdoorEndurance
+	}
+
+	activity := &stride.EnduranceOutdoorActivity{
+		ExternalID:     strconv.Itoa(a.ID),
+		UserExternalID: strconv.Itoa(a.Athlete.ID),
+		Provider:       stride.ProviderStrava,
+		Sport:          sport,
+		StartTime:      a.StartDate,
+		EndTime:        a.StartDate.Add(time.Duration(a.ElapsedTime) * time.Second),
+		IanaTimezone:   a.IanaTimezone(),
+		UTCOffset:      int(a.UtcOffset),
+		ElapsedTime:    a.ElapsedTime,
+		MovingTime:     a.MovingTime,
+		Distance:       a.Distance,
+		ElevGain:       a.TotalElevationGain,
+		AvgSpeed:       a.AverageSpeed,
+	}
+
+	if a.HasHeartrate && a.AverageHeartrate > 0 {
+		avgHR := int16(a.AverageHeartrate)
+		activity.AvgHR = &avgHR
+	}
+
+	if a.HasHeartrate && a.MaxHeartrate > 0 {
+		maxHR := int16(a.MaxHeartrate)
+		activity.MaxHR = &maxHR
+	}
+
+	return activity, nil
+}
+
+func (a ActivitySummary) mapSportType() (stride.Sport, error) {
+	switch a.SportType {
+	case "running":
+		return stride.SportRunning, nil
+	case "trail-running":
+		return stride.SportTrailRunning, nil
+	case "cycling":
+		return stride.SportCycling, nil
+	case "hiking":
+		return stride.SportHiking, nil
+	default:
+		return "", fmt.Errorf("unsupported sport type for endurance metrics: %s", a.SportType)
+	}
 }
 
 type ActivityMap struct {

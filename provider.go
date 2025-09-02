@@ -21,3 +21,12 @@ const (
 	SportSwimming      Sport = "swimming"
 	SportTrailRunning  Sport = "trail-running"
 )
+
+func IsEnduranceOutdoorActivity(sport Sport) bool {
+	switch sport {
+	case SportRunning, SportCycling, SportHiking, SportTrailRunning:
+		return true
+	default:
+		return false
+	}
+}
