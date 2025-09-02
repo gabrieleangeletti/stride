@@ -208,7 +208,7 @@ func (a ActivitySummary) mapSportType() (stride.Sport, error) {
 	case "Hike":
 		return stride.SportHiking, nil
 	default:
-		return "", fmt.Errorf("unsupported sport type: %s", a.SportType)
+		return "", fmt.Errorf("%w: %s", stride.ErrUnsupportedSportType, a.SportType)
 	}
 }
 
