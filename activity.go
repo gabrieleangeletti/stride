@@ -12,13 +12,13 @@ type EnduranceOutdoorActivity struct {
 	StartTime      time.Time `json:"startTime"`
 	EndTime        time.Time `json:"endTime"`
 	IanaTimezone   string    `json:"ianaTimezone"`
-	UTCOffset      int       `json:"utcOffset"`          // seconds
-	ElapsedTime    int       `json:"elapsedTime"`        // seconds
-	MovingTime     int       `json:"movingTime"`         // seconds
-	Distance       float64   `json:"distance"`           // meters
-	ElevGain       float64   `json:"elevGain,omitempty"` // meters
-	ElevLoss       float64   `json:"elevLoss,omitempty"` // meters
-	AvgSpeed       float64   `json:"avgSpeed,omitempty"` // meters / second
-	AvgHR          *int16    `json:"avgHR,omitempty"`    // beats / minute
-	MaxHR          *int16    `json:"maxHR,omitempty"`    // beats / minute
+	UTCOffset      int       `json:"utcOffset"`   // seconds
+	ElapsedTime    int       `json:"elapsedTime"` // seconds
+	MovingTime     int       `json:"movingTime"`  // seconds
+	Distance       float64   `json:"distance"`    // meters
+	ElevGain       *float64  `json:"elevGain"`    // meters
+	ElevLoss       *float64  `json:"elevLoss"`    // meters
+	AvgSpeed       float64   `json:"avgSpeed"`    // meters / second
+	AvgHR          *int16    `json:"avgHR"`       // beats / minute
+	MaxHR          *int16    `json:"maxHR"`       // beats / minute
 }

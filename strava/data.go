@@ -180,7 +180,7 @@ func (a ActivitySummary) ToEnduranceActivity() (*stride.EnduranceOutdoorActivity
 		ElapsedTime:    a.ElapsedTime,
 		MovingTime:     a.MovingTime,
 		Distance:       a.Distance,
-		ElevGain:       a.TotalElevationGain,
+		ElevGain:       &a.TotalElevationGain,
 		AvgSpeed:       a.AverageSpeed,
 	}
 
