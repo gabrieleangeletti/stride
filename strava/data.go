@@ -1,6 +1,9 @@
 package strava
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type TokenResponse struct {
 	TokenType    string  `json:"token_type"`
@@ -136,6 +139,19 @@ type ActivitySummary struct {
 	TotalPhotoCount            int         `json:"total_photo_count"`
 	HasKudoed                  bool        `json:"has_kudoed"`
 	SufferScore                float64     `json:"suffer_score"`
+}
+
+// IanaTimezone extracts the IANA timezone from the Strava timezone string.
+// Strava stores the timezone as a string in the format "(GMT+00:00) Europe/Lisbon".
+// This function returns the IANA timezone identifier, e.g. "Europe/Lisbon".
+func (a ActivitySummary) IanaTimezone() string {
+	if a.Timezone == "" {
+		return ""
+	}
+
+	parts := strings.Split(a.Timezone, " ")
+
+	return parts[len(parts)-1]
 }
 
 type ActivityMap struct {
