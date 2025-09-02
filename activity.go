@@ -11,14 +11,15 @@ var (
 )
 
 type Activity struct {
-	ExternalID   string          `json:"externalId"` // The id given by the provider
-	Provider     Provider        `json:"provider"`
-	Sport        Sport           `json:"sport"`
-	StartTime    time.Time       `json:"startTime"`
-	EndTime      time.Time       `json:"endTime"`
-	IanaTimezone string          `json:"ianaTimezone"`
-	UTCOffset    int             `json:"utcOffset"` // seconds
-	Metrics      ActivityMetrics `json:"metrics,omitempty"`
+	ExternalID     string          `json:"externalId"`     // The id of the activity in the provider's system
+	UserExternalID string          `json:"userExternalId"` // The id of the user in the provider's system
+	Provider       Provider        `json:"provider"`
+	Sport          Sport           `json:"sport"`
+	StartTime      time.Time       `json:"startTime"`
+	EndTime        time.Time       `json:"endTime"`
+	IanaTimezone   string          `json:"ianaTimezone"`
+	UTCOffset      int             `json:"utcOffset"` // seconds
+	Metrics        ActivityMetrics `json:"metrics,omitempty"`
 }
 
 func (a Activity) MarshalJSON() ([]byte, error) {

@@ -83,14 +83,15 @@ func (r *ActivityRegistry) DecodeMetrics(raw json.RawMessage, sport Sport) (Acti
 
 func (r *ActivityRegistry) DecodeActivityJSON(b []byte) (*Activity, error) {
 	var aux struct {
-		ExternalID   string          `json:"externalId"` // The id given by the provider
-		Provider     Provider        `json:"provider"`
-		Sport        Sport           `json:"sport"`
-		StartTime    TimeRFC3339     `json:"startTime"`
-		EndTime      TimeRFC3339     `json:"endTime"`
-		IanaTimezone string          `json:"ianaTimezone"`
-		UTCOffset    int             `json:"utcOffset"` // seconds
-		Metrics      json.RawMessage `json:"metrics"`
+		ExternalID     string          `json:"externalId"`
+		UserExternalID string          `json:"userExternalId"`
+		Provider       Provider        `json:"provider"`
+		Sport          Sport           `json:"sport"`
+		StartTime      TimeRFC3339     `json:"startTime"`
+		EndTime        TimeRFC3339     `json:"endTime"`
+		IanaTimezone   string          `json:"ianaTimezone"`
+		UTCOffset      int             `json:"utcOffset"`
+		Metrics        json.RawMessage `json:"metrics"`
 	}
 	if err := json.Unmarshal(b, &aux); err != nil {
 		return nil, err
