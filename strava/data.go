@@ -199,16 +199,16 @@ func (a ActivitySummary) ToEnduranceActivity() (*stride.EnduranceOutdoorActivity
 
 func (a ActivitySummary) mapSportType() (stride.Sport, error) {
 	switch a.SportType {
-	case "running":
+	case "Run":
 		return stride.SportRunning, nil
-	case "trail-running":
+	case "TrailRun":
 		return stride.SportTrailRunning, nil
-	case "cycling":
+	case "Ride":
 		return stride.SportCycling, nil
-	case "hiking":
+	case "Hike":
 		return stride.SportHiking, nil
 	default:
-		return "", fmt.Errorf("unsupported sport type for endurance metrics: %s", a.SportType)
+		return "", fmt.Errorf("unsupported sport type: %s", a.SportType)
 	}
 }
 
