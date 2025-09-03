@@ -197,6 +197,10 @@ func (a ActivitySummary) ToEnduranceActivity() (*stride.EnduranceOutdoorActivity
 	return activity, nil
 }
 
+func (a ActivitySummary) SummaryPolyline() string {
+	return a.Map.SummaryPolyline
+}
+
 func (a ActivitySummary) mapSportType() (stride.Sport, error) {
 	switch a.SportType {
 	case "Run":
