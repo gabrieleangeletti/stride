@@ -91,6 +91,7 @@ type ActivitySummary struct {
 	ResourceState              int         `json:"resource_state"`
 	Athlete                    Athlete     `json:"athlete"`
 	Name                       string      `json:"name"`
+	Description                string      `json:"description"`
 	Distance                   float64     `json:"distance"`             // in meters
 	MovingTime                 int         `json:"moving_time"`          // in seconds
 	ElapsedTime                int         `json:"elapsed_time"`         // in seconds
