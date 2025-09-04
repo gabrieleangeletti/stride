@@ -112,7 +112,7 @@ const (
 
 type WebhookEvent struct {
 	ObjectType     WebhookObjectType `json:"object_type"`
-	ObjectID       int               `json:"object_id"` // For activity events, the activity's ID. For athlete events, the athlete's ID.
+	ObjectID       int64             `json:"object_id"` // For activity events, the activity's ID. For athlete events, the athlete's ID.
 	AspectType     WebhookAspectType `json:"aspect_type"`
 	Updates        map[string]any    `json:"updates"`         // For activity update events, keys can contain "title," "type," and "private," which is always "true" (activity visibility set to Only You) or "false" (activity visibility set to Followers Only or Everyone). For app deauthorization events, there is always an "authorized" : "false" key-value pair.
 	OwnerID        int               `json:"owner_id"`        // The athlete's ID.
