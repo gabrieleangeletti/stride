@@ -284,7 +284,7 @@ func (a ActivityDetailed) IsEnduranceOutdoorActivity() (bool, error) {
 	return stride.IsEnduranceOutdoorActivity(sport), nil
 }
 
-func (a ActivitySummary) SummaryPolyline() string {
+func (a ActivityDetailed) SummaryPolyline() string {
 	return a.Map.SummaryPolyline
 }
 
