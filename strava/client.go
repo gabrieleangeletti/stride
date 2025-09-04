@@ -100,7 +100,7 @@ func (c *Client) GetActivitySummaries(startTime, endTime time.Time, page int) ([
 	return activities, nil
 }
 
-func (c *Client) GetActivitySummary(id int, includeAllEfforts bool) (*ActivitySummary, error) {
+func (c *Client) GetActivity(id int, includeAllEfforts bool) (*ActivityDetailed, error) {
 	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d", c.baseUrl, id))
 
 	params := url.Values{}
@@ -131,7 +131,7 @@ func (c *Client) GetActivitySummary(id int, includeAllEfforts bool) (*ActivitySu
 		return nil, fmt.Errorf("failed to get activities: %s\n%s", resp.Status, string(bodyBytes))
 	}
 
-	var activity ActivitySummary
+	var activity ActivityDetailed
 	if err := json.NewDecoder(resp.Body).Decode(&activity); err != nil {
 		return nil, err
 	}

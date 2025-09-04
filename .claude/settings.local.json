@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:pkg.go.dev)",
+      "Bash(go get:*)",
+      "Bash(go doc:*)",
+      "Bash(go build:*)",
+      "Read(/private/tmp/**)",
+      "Bash(go mod download:*)",
+      "Bash(go mod:*)",
+      "Bash(go run:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
