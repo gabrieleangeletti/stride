@@ -10,6 +10,7 @@ type Sport string
 
 const (
 	SportCycling       Sport = "cycling"
+	SportGravelCycling Sport = "gravel-cycling"
 	SportElliptical    Sport = "elliptical"
 	SportHiking        Sport = "hiking"
 	SportInlineSkating Sport = "inline-skating"
@@ -24,7 +25,7 @@ const (
 
 func IsEnduranceOutdoorActivity(sport Sport) bool {
 	switch sport {
-	case SportRunning, SportCycling, SportHiking, SportTrailRunning:
+	case SportRunning, SportCycling, SportGravelCycling, SportHiking, SportTrailRunning:
 		return true
 	default:
 		return false

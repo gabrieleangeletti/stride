@@ -299,6 +299,9 @@ func (a ActivityDetailed) Sport() (stride.Sport, error) {
 	case SportTypeRide:
 		return stride.SportCycling, nil
 
+	case SportTypeGravelRide:
+		return stride.SportGravelCycling, nil
+
 	case SportTypeHike:
 		return stride.SportHiking, nil
 	default:
