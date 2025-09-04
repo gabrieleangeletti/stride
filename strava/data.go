@@ -276,7 +276,7 @@ func (a ActivityDetailed) IanaTimezone() string {
 }
 
 func (a ActivityDetailed) IsEnduranceOutdoorActivity() (bool, error) {
-	sport, err := a.mapSportType()
+	sport, err := a.Sport()
 	if err != nil {
 		return false, err
 	}
@@ -288,7 +288,7 @@ func (a ActivityDetailed) SummaryPolyline() string {
 	return a.Map.SummaryPolyline
 }
 
-func (a ActivityDetailed) mapSportType() (stride.Sport, error) {
+func (a ActivityDetailed) Sport() (stride.Sport, error) {
 	switch a.SportType {
 	case SportTypeRun:
 		return stride.SportRunning, nil

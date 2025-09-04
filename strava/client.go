@@ -100,7 +100,7 @@ func (c *Client) GetActivitySummaries(startTime, endTime time.Time, page int) ([
 	return activities, nil
 }
 
-func (c *Client) GetActivity(id int, includeAllEfforts bool) (*ActivityDetailed, error) {
+func (c *Client) GetActivity(id int64, includeAllEfforts bool) (*ActivityDetailed, error) {
 	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d", c.baseUrl, id))
 
 	params := url.Values{}
@@ -139,7 +139,7 @@ func (c *Client) GetActivity(id int, includeAllEfforts bool) (*ActivityDetailed,
 	return &activity, nil
 }
 
-func (c *Client) GetActivityStreams(id int) (*ActivityStream, error) {
+func (c *Client) GetActivityStreams(id int64) (*ActivityStream, error) {
 	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d/streams", c.baseUrl, id))
 
 	params := url.Values{}
