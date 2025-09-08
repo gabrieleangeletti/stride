@@ -309,6 +309,17 @@ func (a ActivityDetailed) Sport() (stride.Sport, error) {
 	}
 }
 
+func (a ActivityDetailed) ToActivity() (*stride.Activity, error) {
+	return &stride.Activity{
+		StartTime:     a.StartDate,
+		ElapsedTime:   uint32(a.ElapsedTime),
+		MovingTime:    uint32(a.MovingTime),
+		Distance:      uint32(a.Distance),
+		AvgSpeed:      uint16(a.AverageSpeed),
+		ElevationGain: stride.Optional[uint16]{Valid: true, Value: uint16(a.TotalElevationGain)},
+	}, nil
+}
+
 type ActivityMap struct {
 	ID              string `json:"id"`
 	SummaryPolyline string `json:"summary_polyline"`
