@@ -143,7 +143,7 @@ func (c *Client) GetActivityStreams(id int64) (*ActivityStream, error) {
 	u, _ := url.Parse(fmt.Sprintf("%s/activities/%d/streams", c.baseUrl, id))
 
 	params := url.Values{}
-	params.Add("keys", "velocity_smooth,cadence,distance,altitude,heartrate,time")
+	params.Add("keys", "velocity_smooth,cadence,distance,altitude,heartrate,time,latlng,moving,grade_smooth,watts,temp")
 	params.Add("key_by_type", "true")
 
 	u.RawQuery = params.Encode()
