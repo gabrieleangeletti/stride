@@ -44,7 +44,7 @@ var (
 	ErrNoValidData         = errors.New("no valid heart rate data points found")
 )
 
-func CalculateAverageHeartRate(timeseries ActivityTimeseries, config AvgHeartRateAnalysisConfig) (float64, error) {
+func CalculateAverageHeartRate(timeseries *ActivityTimeseries, config AvgHeartRateAnalysisConfig) (float64, error) {
 	if len(timeseries.Data) == 0 {
 		return 0, ErrEmptyTimeseriesData
 	}
@@ -64,7 +64,7 @@ func CalculateAverageHeartRate(timeseries ActivityTimeseries, config AvgHeartRat
 	}
 }
 
-func CalculateMaxHeartRate(timeseries ActivityTimeseries, config MaxHeartRateAnalysisConfig) (int, error) {
+func CalculateMaxHeartRate(timeseries *ActivityTimeseries, config MaxHeartRateAnalysisConfig) (int, error) {
 	if len(timeseries.Data) == 0 {
 		return 0, ErrEmptyTimeseriesData
 	}

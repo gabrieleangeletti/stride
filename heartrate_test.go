@@ -11,7 +11,7 @@ import (
 )
 
 func TestCalculateAverageHeartRate(t *testing.T) {
-	timeseries := stride.ActivityTimeseries{
+	timeseries := &stride.ActivityTimeseries{
 		StartTime: time.Now(),
 		Data: []stride.ActivityTimeseriesEntry{
 			{Offset: 0, HeartRate: stride.Optional[uint8]{Value: 120, Valid: true}},
@@ -67,7 +67,7 @@ func TestCalculateAverageHeartRate(t *testing.T) {
 }
 
 func TestCalculateMaxHeartRate(t *testing.T) {
-	timeseries := stride.ActivityTimeseries{
+	timeseries := &stride.ActivityTimeseries{
 		StartTime: time.Now(),
 		Data: []stride.ActivityTimeseriesEntry{
 			{Offset: 0, HeartRate: stride.Optional[uint8]{Value: 120, Valid: true}},
@@ -143,7 +143,7 @@ func TestCalculateMaxHeartRate(t *testing.T) {
 
 func TestCalculateAverageHeartRateEdgeCases(t *testing.T) {
 	t.Run("EmptyData", func(t *testing.T) {
-		timeseries := stride.ActivityTimeseries{
+		timeseries := &stride.ActivityTimeseries{
 			StartTime: time.Now(),
 			Data:      []stride.ActivityTimeseriesEntry{},
 		}
@@ -156,7 +156,7 @@ func TestCalculateAverageHeartRateEdgeCases(t *testing.T) {
 	})
 
 	t.Run("NoValidHeartRateData", func(t *testing.T) {
-		timeseries := stride.ActivityTimeseries{
+		timeseries := &stride.ActivityTimeseries{
 			StartTime: time.Now(),
 			Data: []stride.ActivityTimeseriesEntry{
 				{Offset: 0, HeartRate: stride.Optional[uint8]{Value: 0, Valid: false}},
@@ -173,7 +173,7 @@ func TestCalculateAverageHeartRateEdgeCases(t *testing.T) {
 	})
 
 	t.Run("FilterByValidRate", func(t *testing.T) {
-		timeseries := stride.ActivityTimeseries{
+		timeseries := &stride.ActivityTimeseries{
 			StartTime: time.Now(),
 			Data: []stride.ActivityTimeseriesEntry{
 				{Offset: 0, HeartRate: stride.Optional[uint8]{Value: 30, Valid: true}},   // Too low
@@ -195,7 +195,7 @@ func TestCalculateAverageHeartRateEdgeCases(t *testing.T) {
 
 func TestCalculateMaxHeartRateEdgeCases(t *testing.T) {
 	t.Run("EmptyData", func(t *testing.T) {
-		timeseries := stride.ActivityTimeseries{
+		timeseries := &stride.ActivityTimeseries{
 			StartTime: time.Now(),
 			Data:      []stride.ActivityTimeseriesEntry{},
 		}
@@ -208,7 +208,7 @@ func TestCalculateMaxHeartRateEdgeCases(t *testing.T) {
 	})
 
 	t.Run("NoValidData", func(t *testing.T) {
-		timeseries := stride.ActivityTimeseries{
+		timeseries := &stride.ActivityTimeseries{
 			StartTime: time.Now(),
 			Data: []stride.ActivityTimeseriesEntry{
 				{Offset: 0, HeartRate: stride.Optional[uint8]{Value: 0, Valid: false}},
@@ -225,7 +225,7 @@ func TestCalculateMaxHeartRateEdgeCases(t *testing.T) {
 	})
 
 	t.Run("FilterByValidRate", func(t *testing.T) {
-		timeseries := stride.ActivityTimeseries{
+		timeseries := &stride.ActivityTimeseries{
 			StartTime: time.Now(),
 			Data: []stride.ActivityTimeseriesEntry{
 				{Offset: 0, HeartRate: stride.Optional[uint8]{Value: 30, Valid: true}},   // Too low
