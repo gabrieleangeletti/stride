@@ -8,19 +8,19 @@ import (
 	"net/url"
 )
 
-func NewAuth(clientID, clientSecret string) *auth {
-	return &auth{
+func NewAuth(clientID, clientSecret string) *Auth {
+	return &Auth{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 	}
 }
 
-type auth struct {
+type Auth struct {
 	ClientID     string
 	ClientSecret string
 }
 
-func (a *auth) GetAuthorizationUrl(redirectURI string) *url.URL {
+func (a *Auth) GetAuthorizationUrl(redirectURI string) *url.URL {
 	u, _ := url.Parse("https://www.strava.com/oauth/authorize")
 
 	params := url.Values{}
@@ -35,7 +35,7 @@ func (a *auth) GetAuthorizationUrl(redirectURI string) *url.URL {
 	return u
 }
 
-func (a *auth) ExchangeCodeForAccessToken(code string) (*TokenResponse, error) {
+func (a *Auth) ExchangeCodeForAccessToken(code string) (*TokenResponse, error) {
 	u, _ := url.Parse("https://www.strava.com/oauth/token")
 
 	params := url.Values{}
@@ -71,7 +71,7 @@ func (a *auth) ExchangeCodeForAccessToken(code string) (*TokenResponse, error) {
 	return &r, nil
 }
 
-func (a *auth) RefreshToken(refreshToken string) (*TokenResponse, error) {
+func (a *Auth) RefreshToken(refreshToken string) (*TokenResponse, error) {
 	u, _ := url.Parse("https://www.strava.com/oauth/token")
 
 	params := url.Values{}
@@ -107,7 +107,7 @@ func (a *auth) RefreshToken(refreshToken string) (*TokenResponse, error) {
 	return &r, nil
 }
 
-func (a *auth) RegisterWebhookSubscription(callbackURL, verifyToken string) (*WebhookRegistrationResponse, error) {
+func (a *Auth) RegisterWebhookSubscription(callbackURL, verifyToken string) (*WebhookRegistrationResponse, error) {
 	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions")
 
 	params := url.Values{}
@@ -143,7 +143,7 @@ func (a *auth) RegisterWebhookSubscription(callbackURL, verifyToken string) (*We
 	return &r, nil
 }
 
-func (a *auth) GetWebhookSubscriptions() ([]WebhookSubscription, error) {
+func (a *Auth) GetWebhookSubscriptions() ([]WebhookSubscription, error) {
 	u, _ := url.Parse("https://www.strava.com/api/v3/push_subscriptions")
 
 	params := url.Values{}
@@ -177,7 +177,7 @@ func (a *auth) GetWebhookSubscriptions() ([]WebhookSubscription, error) {
 	return r, nil
 }
 
-func (a *auth) DeleteWebhookSubscription(subscriptionID int) error {
+func (a *Auth) DeleteWebhookSubscription(subscriptionID int) error {
 	u, _ := url.Parse(fmt.Sprintf("https://www.strava.com/api/v3/push_subscriptions/%d", subscriptionID))
 
 	params := url.Values{}
