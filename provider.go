@@ -1,5 +1,7 @@
 package stride
 
+import "fmt"
+
 type Provider string
 
 const (
@@ -22,6 +24,32 @@ const (
 	SportSwimming      Sport = "swimming"
 	SportTrailRunning  Sport = "trail-running"
 )
+
+var validSports = map[Sport]struct{}{
+	SportCycling:       {},
+	SportGravelCycling: {},
+	SportElliptical:    {},
+	SportHiking:        {},
+	SportInlineSkating: {},
+	SportKayaking:      {},
+	SportRockClimbing:  {},
+	SportRunning:       {},
+	SportStairStepper:  {},
+	SportSurfing:       {},
+	SportSwimming:      {},
+	SportTrailRunning:  {},
+}
+
+// ParseSport validates and converts a string to Sport
+func ParseSport(s string) (Sport, error) {
+	sp := Sport(s)
+
+	if _, ok := validSports[sp]; !ok {
+		return "", fmt.Errorf("%w: %q", ErrUnsupportedSportType, s)
+	}
+
+	return sp, nil
+}
 
 func IsEnduranceActivity(sport Sport) bool {
 	switch sport {
