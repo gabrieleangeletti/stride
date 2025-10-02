@@ -304,6 +304,19 @@ func (a ActivityDetailed) Sport() (stride.Sport, error) {
 
 	case SportTypeHike:
 		return stride.SportHiking, nil
+
+	case SportTypeElliptical:
+		return stride.SportElliptical, nil
+
+	case SportTypeStairStepper:
+		return stride.SportStairStepper, nil
+
+	case SportTypeSwim:
+		return stride.SportSwimming, nil
+
+	case SportTypeInlineSkate:
+		return stride.SportInlineSkating, nil
+
 	default:
 		return "", fmt.Errorf("%w: %s", stride.ErrUnsupportedSportType, a.SportType)
 	}
