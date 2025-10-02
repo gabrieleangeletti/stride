@@ -275,13 +275,13 @@ func (a ActivityDetailed) IanaTimezone() string {
 	return parts[len(parts)-1]
 }
 
-func (a ActivityDetailed) IsEnduranceOutdoorActivity() (bool, error) {
+func (a ActivityDetailed) IsEnduranceActivity() (bool, error) {
 	sport, err := a.Sport()
 	if err != nil {
 		return false, err
 	}
 
-	return stride.IsEnduranceOutdoorActivity(sport), nil
+	return stride.IsEnduranceActivity(sport), nil
 }
 
 func (a ActivityDetailed) SummaryPolyline() string {
