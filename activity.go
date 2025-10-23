@@ -19,6 +19,26 @@ type ActivityTimeseries struct {
 	Data      []ActivityTimeseriesEntry
 }
 
+func (ts ActivityTimeseries) EndTime() time.Time {
+	return ts.StartTime.Add(time.Duration(ts.MaxOffset()) * time.Second)
+}
+
+func (ts ActivityTimeseries) ElapsedTime() time.Duration {
+	return ts.EndTime().Sub(ts.StartTime)
+}
+
+func (ts ActivityTimeseries) MaxOffset() int {
+	maxOffset := 0
+
+	for _, entry := range ts.Data {
+		if entry.Offset > maxOffset {
+			maxOffset = entry.Offset
+		}
+	}
+
+	return maxOffset
+}
+
 type ActivityTimeseriesEntry struct {
 	Offset    int
 	HeartRate Optional[uint8]
