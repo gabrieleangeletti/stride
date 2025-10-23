@@ -736,6 +736,7 @@ func addPeriod(sequence []bucket, zoneType thresholdType, config HRThresholdAnal
 	case ThresholdLT1:
 		result.TimeAtLT1Seconds += duration
 		result.LT1Periods++
+
 	case ThresholdLT2:
 		result.TimeAtLT2Seconds += duration
 		result.LT2Periods++
@@ -750,12 +751,12 @@ func calculateSummaryMetrics(result *HRThresholdAnalysisResult) {
 		switch period.Zone {
 		case ThresholdLT1:
 			lt1Durations = append(lt1Durations, period.Duration)
+
 		case ThresholdLT2:
 			lt2Durations = append(lt2Durations, period.Duration)
 		}
 	}
 
-	// Calculate LT1 metrics
 	if len(lt1Durations) > 0 {
 		sum := 0
 		longest := 0
@@ -765,19 +766,21 @@ func calculateSummaryMetrics(result *HRThresholdAnalysisResult) {
 				longest = d
 			}
 		}
+
 		result.LT1AveragePeriodDuration = sum / len(lt1Durations)
 		result.LT1LongestPeriodDuration = longest
 
-		// Smoothness score: ratio of longest period to total time
-		// Further adjusted by penalizing multiple periods
-		if result.TimeAtLT1Seconds > 0 {
-			longestRatio := float64(longest) / float64(result.TimeAtLT1Seconds)
-			periodPenalty := 1.0 / float64(len(lt1Durations))
-			result.LT1SmoothnessScore = longestRatio * (0.5 + 0.5*periodPenalty)
+		totalTime := result.TimeAtLT1Seconds
+		if totalTime > 0 {
+			hhi := 0.0
+			for _, d := range lt1Durations {
+				share := float64(d) / float64(totalTime)
+				hhi += share * share
+			}
+			result.LT1SmoothnessScore = hhi
 		}
 	}
 
-	// Calculate LT2 metrics
 	if len(lt2Durations) > 0 {
 		sum := 0
 		longest := 0
@@ -787,15 +790,18 @@ func calculateSummaryMetrics(result *HRThresholdAnalysisResult) {
 				longest = d
 			}
 		}
+
 		result.LT2AveragePeriodDuration = sum / len(lt2Durations)
 		result.LT2LongestPeriodDuration = longest
 
-		// Smoothness score: ratio of longest period to total time
-		// Further adjusted by penalizing multiple periods
-		if result.TimeAtLT2Seconds > 0 {
-			longestRatio := float64(longest) / float64(result.TimeAtLT2Seconds)
-			periodPenalty := 1.0 / float64(len(lt2Durations))
-			result.LT2SmoothnessScore = longestRatio * (0.5 + 0.5*periodPenalty)
+		totalTime := result.TimeAtLT2Seconds
+		if totalTime > 0 {
+			hhi := 0.0
+			for _, d := range lt2Durations {
+				share := float64(d) / float64(totalTime)
+				hhi += share * share
+			}
+			result.LT2SmoothnessScore = hhi
 		}
 	}
 }
