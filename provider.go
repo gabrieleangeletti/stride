@@ -23,6 +23,7 @@ const (
 	SportSurfing       Sport = "surfing"
 	SportSwimming      Sport = "swimming"
 	SportTrailRunning  Sport = "trail-running"
+	SportUnknown       Sport = "unknown"
 )
 
 var validSports = map[Sport]struct{}{
@@ -38,6 +39,7 @@ var validSports = map[Sport]struct{}{
 	SportSurfing:       {},
 	SportSwimming:      {},
 	SportTrailRunning:  {},
+	SportUnknown:       {},
 }
 
 // ParseSport validates and converts a string to Sport
