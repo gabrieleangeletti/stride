@@ -36,16 +36,14 @@ func CreateGPXFileInMemory(data *Activity, ts *ActivityTimeseries, sport Sport) 
 		t := ts.StartTime.Add(time.Duration(d.Offset) * time.Second)
 
 		point := gpx.GPXPoint{
-			Point: gpx.Point{
-				Latitude:  d.Latitude.Value,
-				Longitude: d.Longitude.Value,
-			},
 			Timestamp: t,
 		}
 
-		// Skip points without GPS coordinates
-		if !d.Latitude.Valid || !d.Longitude.Valid {
-			continue
+		if d.HasGPS() {
+			point.Point = gpx.Point{
+				Latitude:  d.Latitude.Value,
+				Longitude: d.Longitude.Value,
+			}
 		}
 
 		if d.Altitude.Valid {

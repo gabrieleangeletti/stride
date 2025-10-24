@@ -59,3 +59,7 @@ func (a ActivityTimeseriesEntry) IsEmpty() bool {
 		!a.Latitude.Valid &&
 		!a.Longitude.Valid
 }
+
+func (a ActivityTimeseriesEntry) HasGPS() bool {
+	return a.Latitude.Valid && a.Longitude.Valid
+}
