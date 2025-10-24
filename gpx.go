@@ -110,12 +110,12 @@ func ParseGPXFileFromMemory(data []byte) (*Activity, *ActivityTimeseries, Sport,
 
 		entry := ActivityTimeseriesEntry{
 			Offset:    offset,
-			Latitude:  NewOptional(p.Point.Latitude, true),
-			Longitude: NewOptional(p.Point.Longitude, true),
+			Latitude:  Optional[float64]{Value: p.Point.Latitude, Valid: p.Point.Latitude != 0},
+			Longitude: Optional[float64]{Value: p.Point.Longitude, Valid: p.Point.Longitude != 0},
 		}
 
 		if !math.IsNaN(p.Point.Elevation.Value()) {
-			entry.Altitude = NewOptional(uint16(p.Point.Elevation.Value()), true)
+			entry.Altitude = Optional[uint16]{Value: uint16(p.Point.Elevation.Value()), Valid: true}
 		}
 
 		for _, ext := range p.Extensions.Nodes {
@@ -125,11 +125,11 @@ func ParseGPXFileFromMemory(data []byte) (*Activity, *ActivityTimeseries, Sport,
 					case "hr":
 						var hr uint8
 						fmt.Sscanf(sub.Data, "%d", &hr)
-						entry.HeartRate = NewOptional(hr, true)
+						entry.HeartRate = Optional[uint8]{Value: hr, Valid: true}
 					case "cad":
 						var cad uint8
 						fmt.Sscanf(sub.Data, "%d", &cad)
-						entry.Cadence = NewOptional(cad, true)
+						entry.Cadence = Optional[uint8]{Value: cad, Valid: true}
 					}
 				}
 			}
