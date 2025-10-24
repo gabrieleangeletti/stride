@@ -9,6 +9,10 @@ import (
 	"github.com/tkrajina/gpxgo/gpx"
 )
 
+var (
+	ErrNoTrackPoints = errors.New("no track points found")
+)
+
 func CreateGPXFileInMemory(data *Activity, ts *ActivityTimeseries, sport Sport) ([]byte, error) {
 	gpxFile := &gpx.GPX{
 		Version: "1.1",
@@ -91,7 +95,7 @@ func ParseGPXFileFromMemory(data []byte) (*Activity, *ActivityTimeseries, Sport,
 	points := segment.Points
 
 	if len(points) == 0 {
-		return nil, nil, SportUnknown, errors.New("no track points found")
+		return nil, nil, SportUnknown, ErrNoTrackPoints
 	}
 
 	sport := gpxNameToSport(track.Type, track.Name)
