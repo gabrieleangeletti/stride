@@ -361,7 +361,7 @@ func (s *ActivityStream) ToTimeseries(startTime time.Time) (*stride.ActivityTime
 
 	for i := 0; i < len(s.Time.Data); i++ {
 		data := stride.ActivityTimeseriesEntry{
-			Offset: i,
+			Offset: s.Time.Data[i],
 		}
 
 		if i < len(s.Heartrate.Data) {
