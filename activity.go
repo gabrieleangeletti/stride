@@ -2,6 +2,10 @@ package stride
 
 import "time"
 
+type ActivityConvertible interface {
+	ToActivity() (*Activity, error)
+}
+
 type Activity struct {
 	Sport         Sport
 	StartTime     time.Time        // UTC
@@ -13,6 +17,10 @@ type Activity struct {
 	MaxHR         Optional[uint8]  // beats / minute
 	ElevationGain Optional[uint16] // meters
 	ElevationLoss Optional[uint16] // meters
+}
+
+type ActivityTimeseriesConvertible interface {
+	ToTimeseries(startTime time.Time) (*ActivityTimeseries, error)
 }
 
 type ActivityTimeseries struct {
