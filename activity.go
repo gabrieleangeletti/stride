@@ -3,6 +3,7 @@ package stride
 import "time"
 
 type Activity struct {
+	Sport         Sport
 	StartTime     time.Time        // UTC
 	ElapsedTime   uint32           // seconds
 	MovingTime    uint32           // seconds

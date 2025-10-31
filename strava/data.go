@@ -323,7 +323,13 @@ func (a ActivityDetailed) Sport() (stride.Sport, error) {
 }
 
 func (a ActivityDetailed) ToActivity() (*stride.Activity, error) {
+	sport, err := a.Sport()
+	if err != nil {
+		return nil, err
+	}
+
 	return &stride.Activity{
+		Sport:         sport,
 		StartTime:     a.StartDate,
 		ElapsedTime:   uint32(a.ElapsedTime),
 		MovingTime:    uint32(a.MovingTime),
