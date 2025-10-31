@@ -329,6 +329,7 @@ func (a ActivityDetailed) ToActivity() (*stride.Activity, error) {
 	}
 
 	return &stride.Activity{
+		Provider:      stride.ProviderStrava,
 		Sport:         sport,
 		StartTime:     a.StartDate,
 		ElapsedTime:   uint32(a.ElapsedTime),

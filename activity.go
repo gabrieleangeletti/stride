@@ -7,6 +7,7 @@ type ActivityConvertible interface {
 }
 
 type Activity struct {
+	Provider      Provider
 	Sport         Sport
 	StartTime     time.Time        // UTC
 	ElapsedTime   uint32           // seconds
