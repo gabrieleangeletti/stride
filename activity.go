@@ -1,6 +1,10 @@
 package stride
 
-import "time"
+import (
+	"errors"
+	"math"
+	"time"
+)
 
 type ActivityConvertible interface {
 	ToActivity() (*Activity, error)
@@ -47,6 +51,53 @@ func (ts ActivityTimeseries) MaxOffset() int {
 	}
 
 	return maxOffset
+}
+
+type hrMetrics struct {
+	AvgHR int16
+	MaxHR int16
+}
+
+func (ts *ActivityTimeseries) HRMetrics() (*hrMetrics, error) {
+	avgHR, err := CalculateAverageHeartRate(ts, AvgHeartRateAnalysisConfig{
+		Method:       HeartRateMethodTimeWeighted,
+		ExcludeZeros: true,
+		MinValidRate: 40,
+		MaxValidRate: 220,
+		MaxHeartRate: 193,
+	})
+	if err != nil {
+		if !errors.Is(err, ErrNoValidData) {
+			return nil, err
+		}
+	}
+
+	var avgValue int16
+	if avgHR > 0 {
+		avgValue = int16(math.Round(avgHR))
+	}
+
+	thirtySec := 30 * time.Second
+
+	maxHR, err := CalculateMaxHeartRate(ts, MaxHeartRateAnalysisConfig{
+		Method:         MaxHeartRateMethodRollingWindow,
+		WindowDuration: &thirtySec,
+	})
+	if err != nil {
+		if !errors.Is(err, ErrNoValidData) {
+			return nil, err
+		}
+	}
+
+	var maxValue int16
+	if maxHR > 0 {
+		maxValue = int16(maxHR)
+	}
+
+	return &hrMetrics{
+		AvgHR: avgValue,
+		MaxHR: maxValue,
+	}, nil
 }
 
 type ActivityTimeseriesEntry struct {
