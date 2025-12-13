@@ -3,6 +3,7 @@ package stride
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -41,8 +42,9 @@ type MaxHeartRateAnalysisConfig struct {
 }
 
 var (
-	ErrEmptyTimeseriesData = errors.New("activity timeseries data is empty")
-	ErrNoValidData         = errors.New("no valid heart rate data points found")
+	ErrEmptyTimeseriesData   = errors.New("activity timeseries data is empty")
+	ErrNoValidData           = errors.New("no valid heart rate data points found")
+	ErrInsufficientDriftData = errors.New("insufficient data for drift analysis after warmup filtering")
 )
 
 func CalculateAverageHeartRate(timeseries *ActivityTimeseries, config AvgHeartRateAnalysisConfig) (float64, error) {
@@ -804,4 +806,254 @@ func calculateSummaryMetrics(result *HRThresholdAnalysisResult) {
 			result.LT2SmoothnessScore = hhi
 		}
 	}
+}
+
+// HeartRateDriftConfig defines the configuration for cardiac drift analysis
+type HeartRateDriftConfig struct {
+	// The target Aerobic Threshold Heart Rate in bpm
+	TargetAeT int
+
+	// Configurable parameters
+	AeTTolerance      int           // BPM below TargetAeT acceptable to start (default: 5)
+	BucketSizeSeconds int           // Size of time buckets (default: 60s)
+	MinDriftDuration  time.Duration // Min duration required after warmup (default: 40m)
+}
+
+// HeartRateDriftResult contains both Simple Drift and Efficiency Decoupling results
+type HeartRateDriftResult struct {
+	// --- Simple HR Drift (Uphill Athlete Style) ---
+	// Formula: ((AvgHR2 - AvgHR1) / AvgHR1) * 100
+	SimpleDriftPercentage float64
+	SimpleDriftBPM        float64
+
+	// --- Aerobic Decoupling (TrainingPeaks Style) ---
+	// Formula: (EF1 - EF2) / EF1 * 100
+	// Represents the loss of efficiency (Output per Heart Beat)
+	DecouplingPercentage float64
+
+	// True if we had enough Speed/Power data to calculate this
+	IsDecouplingValid bool
+
+	// --- Metadata ---
+	FirstHalfAvgHR  float64
+	SecondHalfAvgHR float64
+
+	FirstHalfAvgOutput  float64 // Average Speed or Power of first half
+	SecondHalfAvgOutput float64 // Average Speed or Power of second half
+
+	WarmupDurationSeconds int
+	ValidDurationSeconds  int
+}
+
+// Internal bucket struct to aggregate all metrics
+type driftBucket struct {
+	avgHeartRate float64
+	avgSpeed     float64
+
+	hasHR    bool
+	hasSpeed bool
+
+	index int
+}
+
+func (c *HeartRateDriftConfig) ApplyDefaults() HeartRateDriftConfig {
+	config := *c
+	if config.AeTTolerance == 0 {
+		config.AeTTolerance = 5
+	}
+	if config.BucketSizeSeconds == 0 {
+		config.BucketSizeSeconds = 60
+	}
+	if config.MinDriftDuration == 0 {
+		config.MinDriftDuration = 40 * time.Minute
+	}
+	return config
+}
+
+func AnalyzeHeartRateDrift(timeseries *ActivityTimeseries, config HeartRateDriftConfig) (HeartRateDriftResult, error) {
+	if timeseries == nil {
+		return HeartRateDriftResult{}, errors.New("timeseries cannot be nil")
+	}
+	if len(timeseries.Data) == 0 {
+		return HeartRateDriftResult{}, ErrEmptyTimeseriesData
+	}
+	if config.TargetAeT == 0 {
+		return HeartRateDriftResult{}, errors.New("TargetAeT must be specified")
+	}
+
+	config = config.ApplyDefaults()
+
+	buckets := createDriftBuckets(timeseries, config.BucketSizeSeconds)
+	if len(buckets) == 0 {
+		return HeartRateDriftResult{}, ErrNoValidData
+	}
+
+	startThreshold := float64(config.TargetAeT - config.AeTTolerance)
+	startIndex := -1
+
+	for i, b := range buckets {
+		if !b.hasHR {
+			continue
+		}
+		if b.avgHeartRate >= startThreshold {
+			startIndex = i
+			break
+		}
+	}
+
+	if startIndex == -1 || startIndex >= len(buckets) {
+		return HeartRateDriftResult{}, ErrInsufficientDriftData
+	}
+
+	validBuckets := buckets[startIndex:]
+	validDuration := len(validBuckets) * config.BucketSizeSeconds
+
+	if time.Duration(validDuration)*time.Second < config.MinDriftDuration {
+		return HeartRateDriftResult{}, ErrInsufficientDriftData
+	}
+
+	midPoint := len(validBuckets) / 2
+	firstHalf := validBuckets[:midPoint]
+	secondHalf := validBuckets[len(validBuckets)-midPoint:]
+
+	avgHR1 := calculateBucketAvg(firstHalf, func(b driftBucket) float64 { return b.avgHeartRate })
+	avgHR2 := calculateBucketAvg(secondHalf, func(b driftBucket) float64 { return b.avgHeartRate })
+
+	if avgHR1 == 0 {
+		return HeartRateDriftResult{}, ErrNoValidData
+	}
+
+	hrDriftBPM := avgHR2 - avgHR1
+	hrDriftPercent := (hrDriftBPM / avgHR1) * 100.0
+
+	// 6. Calculate Aerobic Decoupling (Efficiency Factor)
+	// Determine if we use Power or Speed
+	hasSpeedData := checkDataAvailability(validBuckets, func(b driftBucket) bool { return b.hasSpeed })
+	if !hasSpeedData {
+		return HeartRateDriftResult{
+			SimpleDriftPercentage: round(hrDriftPercent),
+			SimpleDriftBPM:        round(hrDriftBPM),
+			FirstHalfAvgHR:        round(avgHR1),
+			SecondHalfAvgHR:       round(avgHR2),
+			WarmupDurationSeconds: startIndex * config.BucketSizeSeconds,
+			ValidDurationSeconds:  validDuration,
+			IsDecouplingValid:     false,
+		}, nil
+	}
+
+	outputGetter := func(b driftBucket) float64 {
+		return b.avgSpeed
+	}
+
+	avgOutput1 := calculateBucketAvg(firstHalf, outputGetter)
+	avgOutput2 := calculateBucketAvg(secondHalf, outputGetter)
+
+	ef1 := avgOutput1 / avgHR1
+	ef2 := avgOutput2 / avgHR2
+
+	decouplingPercent := 0.0
+	if ef1 > 0 {
+		decouplingPercent = ((ef1 - ef2) / ef1) * 100.0
+	}
+
+	return HeartRateDriftResult{
+		// Simple Drift
+		SimpleDriftPercentage: round(hrDriftPercent),
+		SimpleDriftBPM:        round(hrDriftBPM),
+
+		// Decoupling
+		DecouplingPercentage: round(decouplingPercent),
+		IsDecouplingValid:    true,
+
+		// Metadata
+		FirstHalfAvgHR:        round(avgHR1),
+		SecondHalfAvgHR:       round(avgHR2),
+		FirstHalfAvgOutput:    round(avgOutput1),
+		SecondHalfAvgOutput:   round(avgOutput2),
+		WarmupDurationSeconds: startIndex * config.BucketSizeSeconds,
+		ValidDurationSeconds:  validDuration,
+	}, nil
+}
+
+func createDriftBuckets(timeseries *ActivityTimeseries, bucketSize int) []driftBucket {
+	if len(timeseries.Data) == 0 {
+		return nil
+	}
+
+	numBuckets := (timeseries.MaxOffset() / bucketSize) + 1
+	buckets := make([]driftBucket, numBuckets)
+
+	type sums struct {
+		hrSum, speedSum, powerSum       float64
+		hrCount, speedCount, powerCount int
+	}
+	bucketSums := make([]sums, numBuckets)
+
+	for _, entry := range timeseries.Data {
+		idx := entry.Offset / bucketSize
+		if idx >= numBuckets {
+			continue
+		}
+
+		if entry.HeartRate.Valid {
+			bucketSums[idx].hrSum += float64(entry.HeartRate.Value)
+			bucketSums[idx].hrCount++
+		}
+
+		if entry.Velocity.Valid {
+			bucketSums[idx].speedSum += float64(entry.Velocity.Value)
+			bucketSums[idx].speedCount++
+		}
+	}
+
+	for i := range buckets {
+		buckets[i].index = i
+		s := bucketSums[i]
+
+		if s.hrCount > 0 {
+			buckets[i].avgHeartRate = s.hrSum / float64(s.hrCount)
+			buckets[i].hasHR = true
+		}
+		if s.speedCount > 0 {
+			buckets[i].avgSpeed = s.speedSum / float64(s.speedCount)
+			buckets[i].hasSpeed = true
+		}
+	}
+
+	return buckets
+}
+
+func calculateBucketAvg(buckets []driftBucket, getter func(driftBucket) float64) float64 {
+	sum := 0.0
+	count := 0
+
+	for _, b := range buckets {
+		val := getter(b)
+
+		if val > 0 {
+			sum += val
+			count++
+		}
+	}
+
+	if count == 0 {
+		return 0
+	}
+
+	return sum / float64(count)
+}
+
+func checkDataAvailability(buckets []driftBucket, checker func(driftBucket) bool) bool {
+	validCount := 0
+	for _, b := range buckets {
+		if checker(b) {
+			validCount++
+		}
+	}
+
+	return float64(validCount) >= float64(len(buckets))*0.5
+}
+
+func round(val float64) float64 {
+	return math.Round(val*100) / 100
 }
