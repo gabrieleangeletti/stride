@@ -926,8 +926,6 @@ func AnalyzeHeartRateDrift(timeseries *ActivityTimeseries, config HeartRateDrift
 	hrDriftBPM := avgHR2 - avgHR1
 	hrDriftPercent := (hrDriftBPM / avgHR1) * 100.0
 
-	// 6. Calculate Aerobic Decoupling (Efficiency Factor)
-	// Determine if we use Power or Speed
 	hasSpeedData := checkDataAvailability(validBuckets, func(b driftBucket) bool { return b.hasSpeed })
 	if !hasSpeedData {
 		return HeartRateDriftResult{
