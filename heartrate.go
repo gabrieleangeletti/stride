@@ -45,6 +45,8 @@ var (
 	ErrEmptyTimeseriesData   = errors.New("activity timeseries data is empty")
 	ErrNoValidData           = errors.New("no valid heart rate data points found")
 	ErrInsufficientDriftData = errors.New("insufficient data for drift analysis after warmup filtering")
+	ErrInvalidRestingHR      = errors.New("resting heart rate must be lower than average heart rate")
+	ErrMissingSpeedData      = errors.New("cannot calculate score without valid speed data")
 )
 
 func CalculateAverageHeartRate(timeseries *ActivityTimeseries, config AvgHeartRateAnalysisConfig) (float64, error) {
@@ -1054,4 +1056,98 @@ func checkDataAvailability(buckets []driftBucket, checker func(driftBucket) bool
 
 func round(val float64) float64 {
 	return math.Round(val*100) / 100
+}
+
+// --- Aerobic Threshold Scoring (Garmin/Uphill Athlete Style) ---
+
+// AerobicScoreConfig defines parameters for the AeT score calculation
+type AerobicScoreConfig struct {
+	RestingHeartRate int     // Essential for HRR calculation
+	InclinePercent   float64 // e.g., 7.0 for 7% incline. Used for GAP.
+}
+
+// AerobicScoreResult contains the final score and its components
+type AerobicScoreResult struct {
+	Score int // The 0-1000 score
+
+	// Component Metrics for Analysis
+	EfficiencyFactor   float64 // (GAP m/min) / (AvgHR - RHR)
+	GradeAdjustedPace  float64 // Pace normalized to flat ground (m/min)
+	WorkingHeartRate   float64 // AvgHR - RHR
+	ValidityMultiplier float64 // 1.0 if good, <1.0 if drift > 5%
+	IsScoreValid       bool    // False if HRR > AvgHR or missing speed
+}
+
+// CalculateAerobicThresholdScore computes the fitness score based on drift test results
+func CalculateAerobicThresholdScore(driftResult HeartRateDriftResult, config AerobicScoreConfig) (AerobicScoreResult, error) {
+	if !driftResult.IsDecouplingValid {
+		return AerobicScoreResult{}, ErrMissingSpeedData
+	}
+
+	avgHR := (driftResult.FirstHalfAvgHR + driftResult.SecondHalfAvgHR) / 2.0
+
+	workingHR := avgHR - float64(config.RestingHeartRate)
+	if workingHR <= 0 {
+		return AerobicScoreResult{}, ErrInvalidRestingHR
+	}
+
+	avgSpeedMPS := (driftResult.FirstHalfAvgOutput + driftResult.SecondHalfAvgOutput) / 2.0
+	avgSpeedMMin := avgSpeedMPS * 60.0
+
+	gapMMin := calculateMinettiGAP(avgSpeedMMin, config.InclinePercent)
+
+	efficiencyFactor := gapMMin / workingHR
+
+	validityMultiplier := 1.0
+	driftParams := 5.0
+	penaltySlope := 0.1
+
+	if driftResult.SimpleDriftPercentage > driftParams {
+		excessDrift := driftResult.SimpleDriftPercentage - driftParams
+		validityMultiplier = 1.0 - (excessDrift * penaltySlope)
+	}
+
+	if validityMultiplier < 0.1 {
+		validityMultiplier = 0.1
+	}
+
+	scalingFactor := 350.0
+	rawScore := efficiencyFactor * scalingFactor * validityMultiplier
+
+	return AerobicScoreResult{
+		Score:              int(math.Round(rawScore)),
+		EfficiencyFactor:   round(efficiencyFactor),
+		GradeAdjustedPace:  round(gapMMin),
+		WorkingHeartRate:   round(workingHR),
+		ValidityMultiplier: round(validityMultiplier),
+		IsScoreValid:       true,
+	}, nil
+}
+
+// calculateMinettiGAP converts uphill speed to equivalent flat speed based on metabolic cost.
+// Source: Minetti et al. (2002) - Energy cost of walking and running at extreme slopes.
+func calculateMinettiGAP(speedMMin float64, inclinePercent float64) float64 {
+	if inclinePercent == 0 {
+		return speedMMin
+	}
+
+	grade := inclinePercent / 100.0
+
+	// Energy Cost (J/kg/m) of running on flat terrain
+	const costFlat = 3.6
+
+	// Energy Cost Polynomial for running on a slope (Minetti)
+	// C(i) = 155.4i^5 - 30.4i^4 - 43.3i^3 + 46.3i^2 + 19.5i + 3.6
+	costSlope := (155.4 * math.Pow(grade, 5)) -
+		(30.4 * math.Pow(grade, 4)) -
+		(43.3 * math.Pow(grade, 3)) +
+		(46.3 * math.Pow(grade, 2)) +
+		(19.5 * grade) +
+		3.6
+
+	// The ratio defines how much harder the hill is compared to flat
+	effortRatio := costSlope / costFlat
+
+	// GAP is the speed multiplied by that effort ratio
+	return speedMMin * effortRatio
 }

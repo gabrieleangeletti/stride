@@ -808,3 +808,160 @@ func TestNoThresholdsReached(t *testing.T) {
 	assert.Equal(t, float64(0), result.LT1SmoothnessScore)
 	assert.Equal(t, float64(0), result.LT2SmoothnessScore)
 }
+
+func TestCalculateAerobicThresholdScore(t *testing.T) {
+	// Common config for the athlete discussed (RHR 46, Incline 7%)
+	rhr := 46
+	incline := 7.0
+
+	t.Run("Result2_PerfectExecution", func(t *testing.T) {
+		// This simulates "Result 2":
+		// Pace: ~7:53/km (~2.11 m/s)
+		// HR: ~152 bpm
+		// Drift: 3.74% (No penalty)
+
+		input := HeartRateDriftResult{
+			IsDecouplingValid:     true,
+			FirstHalfAvgHR:        149.63,
+			SecondHalfAvgHR:       155.23, // Avg ~152.43
+			FirstHalfAvgOutput:    2.11,   // ~7:54/km
+			SecondHalfAvgOutput:   2.11,
+			SimpleDriftPercentage: 3.74,
+		}
+
+		config := AerobicScoreConfig{
+			RestingHeartRate: rhr,
+			InclinePercent:   incline,
+		}
+
+		result, err := CalculateAerobicThresholdScore(input, config)
+		require.NoError(t, err)
+
+		// Verification Steps:
+		// 1. Avg HR = 152.43. Working HR = 152.43 - 46 = 106.43
+		assert.InDelta(t, 106.43, result.WorkingHeartRate, 0.1)
+
+		// 2. Speed = 2.11 m/s = 126.6 m/min
+		// 3. GAP (Minetti 7%): Multiplier is approx 1.44x. Expected ~182 m/min
+		assert.InDelta(t, 182.0, result.GradeAdjustedPace, 1.0)
+
+		// 4. Validity: Drift < 5%, so multiplier should be 1.0
+		assert.Equal(t, 1.0, result.ValidityMultiplier)
+
+		// 5. EF = 182 / 106.43 = ~1.71
+		// 6. Score = 1.71 * 350 = ~598-605 range
+		assert.Greater(t, result.Score, 590)
+		assert.Less(t, result.Score, 610)
+		assert.True(t, result.IsScoreValid)
+	})
+
+	t.Run("Result1_HighDrift_Penalty", func(t *testing.T) {
+		// This simulates "Result 1":
+		// Pace: 8:00/km (2.083 m/s)
+		// HR: ~158 bpm
+		// Drift: 5.73% (Penalty applied)
+
+		input := HeartRateDriftResult{
+			IsDecouplingValid:     true,
+			FirstHalfAvgHR:        153.54,
+			SecondHalfAvgHR:       162.34, // Avg ~157.94
+			FirstHalfAvgOutput:    2.0833,
+			SecondHalfAvgOutput:   2.0833,
+			SimpleDriftPercentage: 5.73,
+		}
+
+		config := AerobicScoreConfig{
+			RestingHeartRate: rhr,
+			InclinePercent:   incline,
+		}
+
+		result, err := CalculateAerobicThresholdScore(input, config)
+		require.NoError(t, err)
+
+		// 1. Check Penalty Logic
+		// Excess drift = 5.73 - 5.0 = 0.73
+		// Penalty = 0.73 * 0.1 = 0.073
+		// Multiplier = 1.0 - 0.073 = 0.927
+		assert.InDelta(t, 0.927, result.ValidityMultiplier, 0.0033)
+
+		// 2. Check Raw Score vs Final Score relationship
+		// We reconstruct the raw score to ensure penalty was applied mathematically
+		expectedRawScore := (result.EfficiencyFactor * 350.0) * 0.927
+		assert.InDelta(t, expectedRawScore, float64(result.Score), 1.4)
+	})
+
+	t.Run("FlatGround_NoGAP", func(t *testing.T) {
+		// Test on flat ground (0% incline)
+		// GAP should equal Speed exactly
+		input := HeartRateDriftResult{
+			IsDecouplingValid:     true,
+			FirstHalfAvgHR:        140,
+			SecondHalfAvgHR:       140,
+			FirstHalfAvgOutput:    3.0, // 3 m/s = 180 m/min
+			SecondHalfAvgOutput:   3.0,
+			SimpleDriftPercentage: 1.0,
+		}
+
+		config := AerobicScoreConfig{
+			RestingHeartRate: 40,
+			InclinePercent:   0.0, // Flat
+		}
+
+		result, err := CalculateAerobicThresholdScore(input, config)
+		require.NoError(t, err)
+
+		// Speed 180 m/min should equal GAP 180 m/min
+		assert.InDelta(t, 180.0, result.GradeAdjustedPace, 0.1)
+
+		// EF = 180 / (140-40) = 1.8
+		// Score = 1.8 * 350 * 1.0 = 630
+		assert.Equal(t, 630, result.Score)
+	})
+
+	t.Run("MassiveDrift_ClampCheck", func(t *testing.T) {
+		// Ensure score doesn't go negative even with catastrophic drift
+		input := HeartRateDriftResult{
+			IsDecouplingValid:     true,
+			FirstHalfAvgHR:        140,
+			SecondHalfAvgHR:       140, // HR irrelevant for this specific check
+			FirstHalfAvgOutput:    2.0,
+			SecondHalfAvgOutput:   2.0,
+			SimpleDriftPercentage: 20.0, // 15% over limit -> 1.5 penalty -> would be negative without clamp
+		}
+
+		config := AerobicScoreConfig{RestingHeartRate: 40, InclinePercent: 0}
+
+		result, err := CalculateAerobicThresholdScore(input, config)
+		require.NoError(t, err)
+
+		// Should clamp to 0.1
+		assert.Equal(t, 0.1, result.ValidityMultiplier)
+		assert.Positive(t, result.Score)
+	})
+
+	t.Run("Error_MissingSpeed", func(t *testing.T) {
+		input := HeartRateDriftResult{
+			IsDecouplingValid: false, // No speed data
+		}
+		config := AerobicScoreConfig{RestingHeartRate: 50}
+
+		_, err := CalculateAerobicThresholdScore(input, config)
+		assert.ErrorIs(t, err, ErrMissingSpeedData)
+	})
+
+	t.Run("Error_InvalidRHR", func(t *testing.T) {
+		input := HeartRateDriftResult{
+			IsDecouplingValid:   true,
+			FirstHalfAvgHR:      60,
+			SecondHalfAvgHR:     60,
+			FirstHalfAvgOutput:  2.5,
+			SecondHalfAvgOutput: 2.5,
+		}
+
+		// RHR (70) > AvgHR (60)
+		config := AerobicScoreConfig{RestingHeartRate: 70}
+
+		_, err := CalculateAerobicThresholdScore(input, config)
+		assert.ErrorIs(t, err, ErrInvalidRestingHR)
+	})
+}
