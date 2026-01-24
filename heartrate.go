@@ -46,7 +46,6 @@ var (
 	ErrNoValidData           = errors.New("no valid heart rate data points found")
 	ErrInsufficientDriftData = errors.New("insufficient data for drift analysis after warmup filtering")
 	ErrInvalidRestingHR      = errors.New("resting heart rate must be lower than average heart rate")
-	ErrMissingSpeedData      = errors.New("cannot calculate score without valid speed data")
 )
 
 func CalculateAverageHeartRate(timeseries *ActivityTimeseries, config AvgHeartRateAnalysisConfig) (float64, error) {
@@ -1080,10 +1079,6 @@ type AerobicScoreResult struct {
 
 // CalculateAerobicThresholdScore computes the fitness score based on drift test results
 func CalculateAerobicThresholdScore(driftResult HeartRateDriftResult, config AerobicScoreConfig) (AerobicScoreResult, error) {
-	if !driftResult.IsDecouplingValid {
-		return AerobicScoreResult{}, ErrMissingSpeedData
-	}
-
 	avgHR := (driftResult.FirstHalfAvgHR + driftResult.SecondHalfAvgHR) / 2.0
 
 	workingHR := avgHR - float64(config.RestingHeartRate)

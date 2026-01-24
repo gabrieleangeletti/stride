@@ -939,16 +939,6 @@ func TestCalculateAerobicThresholdScore(t *testing.T) {
 		assert.Positive(t, result.Score)
 	})
 
-	t.Run("Error_MissingSpeed", func(t *testing.T) {
-		input := HeartRateDriftResult{
-			IsDecouplingValid: false, // No speed data
-		}
-		config := AerobicScoreConfig{RestingHeartRate: 50}
-
-		_, err := CalculateAerobicThresholdScore(input, config)
-		assert.ErrorIs(t, err, ErrMissingSpeedData)
-	})
-
 	t.Run("Error_InvalidRHR", func(t *testing.T) {
 		input := HeartRateDriftResult{
 			IsDecouplingValid:   true,
