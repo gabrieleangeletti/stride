@@ -46,6 +46,7 @@ var (
 	ErrNoValidData           = errors.New("no valid heart rate data points found")
 	ErrInsufficientDriftData = errors.New("insufficient data for drift analysis after warmup filtering")
 	ErrInvalidRestingHR      = errors.New("resting heart rate must be lower than average heart rate")
+	ErrMissingSpeedData      = errors.New("cannot calculate score without valid speed data")
 )
 
 func CalculateAverageHeartRate(timeseries *ActivityTimeseries, config AvgHeartRateAnalysisConfig) (float64, error) {
@@ -1061,8 +1062,9 @@ func round(val float64) float64 {
 
 // AerobicScoreConfig defines parameters for the AeT score calculation
 type AerobicScoreConfig struct {
-	RestingHeartRate int     // Essential for HRR calculation
-	InclinePercent   float64 // e.g., 7.0 for 7% incline. Used for GAP.
+	RestingHeartRate   int     // Essential for HRR calculation
+	InclinePercent     float64 // e.g., 7.0 for 7% incline. Used for GAP.
+	ManualPaceMinPerKm float64 // Optional: User provided pace (e.g., 8.0 for 8:00/km). Overrides measured speed.
 }
 
 // AerobicScoreResult contains the final score and its components
@@ -1079,15 +1081,26 @@ type AerobicScoreResult struct {
 
 // CalculateAerobicThresholdScore computes the fitness score based on drift test results
 func CalculateAerobicThresholdScore(driftResult HeartRateDriftResult, config AerobicScoreConfig) (AerobicScoreResult, error) {
+	var avgSpeedMMin float64
+
+	if config.ManualPaceMinPerKm > 0 {
+		// Convert min/km to m/min
+		// Formula: 1000 meters / minutes
+		avgSpeedMMin = 1000.0 / config.ManualPaceMinPerKm
+	} else if driftResult.IsDecouplingValid {
+		// Convert m/s (standard input) to m/min
+		avgSpeedMPS := (driftResult.FirstHalfAvgOutput + driftResult.SecondHalfAvgOutput) / 2.0
+		avgSpeedMMin = avgSpeedMPS * 60.0
+	} else {
+		return AerobicScoreResult{}, ErrMissingSpeedData
+	}
+
 	avgHR := (driftResult.FirstHalfAvgHR + driftResult.SecondHalfAvgHR) / 2.0
 
 	workingHR := avgHR - float64(config.RestingHeartRate)
 	if workingHR <= 0 {
 		return AerobicScoreResult{}, ErrInvalidRestingHR
 	}
-
-	avgSpeedMPS := (driftResult.FirstHalfAvgOutput + driftResult.SecondHalfAvgOutput) / 2.0
-	avgSpeedMMin := avgSpeedMPS * 60.0
 
 	gapMMin := calculateMinettiGAP(avgSpeedMMin, config.InclinePercent)
 

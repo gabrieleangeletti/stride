@@ -890,6 +890,54 @@ func TestCalculateAerobicThresholdScore(t *testing.T) {
 		assert.InDelta(t, expectedRawScore, float64(result.Score), 1.4)
 	})
 
+	t.Run("TreadmillMode_ManualPace", func(t *testing.T) {
+		// Simulates a treadmill run where the watch didn't capture speed (GPS off),
+		// but the user manually input 8:00 min/km (ManualPaceMinPerKm = 8.0).
+
+		input := HeartRateDriftResult{
+			IsDecouplingValid:     false, // No speed data from device
+			FirstHalfAvgHR:        153.54,
+			SecondHalfAvgHR:       162.34,
+			SimpleDriftPercentage: 5.73,
+		}
+
+		config := AerobicScoreConfig{
+			RestingHeartRate:   rhr, // 46
+			InclinePercent:     7.0, // 7%
+			ManualPaceMinPerKm: 8.0, // 8:00/km manually provided
+		}
+
+		result, err := CalculateAerobicThresholdScore(input, config)
+		require.NoError(t, err)
+
+		// 1. Verify Speed Calculation
+		// 8:00 min/km = 1000m / 8min = 125 m/min
+		// GAP (Minetti 7%): 125 * ~1.44 = ~180 m/min
+		assert.InDelta(t, 180.0, result.GradeAdjustedPace, 1.0)
+
+		// 2. Verify Penalty Logic still applies (Drift was 5.73%)
+		assert.Less(t, result.ValidityMultiplier, 1.0)
+
+		// 3. Verify Score matches our manual calculation for "Result 1"
+		// (Approx 522 based on our previous discussion)
+		assert.Greater(t, result.Score, 515)
+		assert.Less(t, result.Score, 530)
+	})
+
+	t.Run("Error_MissingAllSpeedData", func(t *testing.T) {
+		// Test that it fails if both measured speed AND manual pace are missing
+		input := HeartRateDriftResult{
+			IsDecouplingValid: false,
+		}
+		config := AerobicScoreConfig{
+			RestingHeartRate:   50,
+			ManualPaceMinPerKm: 0, // Not provided
+		}
+
+		_, err := CalculateAerobicThresholdScore(input, config)
+		assert.ErrorIs(t, err, ErrMissingSpeedData)
+	})
+
 	t.Run("FlatGround_NoGAP", func(t *testing.T) {
 		// Test on flat ground (0% incline)
 		// GAP should equal Speed exactly
@@ -937,6 +985,16 @@ func TestCalculateAerobicThresholdScore(t *testing.T) {
 		// Should clamp to 0.1
 		assert.Equal(t, 0.1, result.ValidityMultiplier)
 		assert.Positive(t, result.Score)
+	})
+
+	t.Run("Error_MissingSpeed", func(t *testing.T) {
+		input := HeartRateDriftResult{
+			IsDecouplingValid: false, // No speed data
+		}
+		config := AerobicScoreConfig{RestingHeartRate: 50}
+
+		_, err := CalculateAerobicThresholdScore(input, config)
+		assert.ErrorIs(t, err, ErrMissingSpeedData)
 	})
 
 	t.Run("Error_InvalidRHR", func(t *testing.T) {
