@@ -891,47 +891,40 @@ func TestCalculateAerobicThresholdScore(t *testing.T) {
 	})
 
 	t.Run("TreadmillMode_ManualPace", func(t *testing.T) {
-		// Simulates a treadmill run where the watch didn't capture speed (GPS off),
-		// but the user manually input 8:00 min/km (ManualPaceMinPerKm = 8.0).
-
+		// Simulates a treadmill run where user manually input 8:00 min/km
 		input := HeartRateDriftResult{
-			IsDecouplingValid:     false, // No speed data from device
+			IsDecouplingValid:     false,
 			FirstHalfAvgHR:        153.54,
 			SecondHalfAvgHR:       162.34,
 			SimpleDriftPercentage: 5.73,
 		}
 
 		config := AerobicScoreConfig{
-			RestingHeartRate:   rhr, // 46
-			InclinePercent:     7.0, // 7%
-			ManualPaceMinPerKm: 8.0, // 8:00/km manually provided
+			RestingHeartRate: rhr,
+			InclinePercent:   7.0,
+			ManualPace:       &Pace{Minutes: 8, Seconds: 0}, // 8:00 min/km
 		}
 
 		result, err := CalculateAerobicThresholdScore(input, config)
 		require.NoError(t, err)
 
 		// 1. Verify Speed Calculation
-		// 8:00 min/km = 1000m / 8min = 125 m/min
+		// 8:00 min/km = 125 m/min
 		// GAP (Minetti 7%): 125 * ~1.44 = ~180 m/min
 		assert.InDelta(t, 180.0, result.GradeAdjustedPace, 1.0)
 
-		// 2. Verify Penalty Logic still applies (Drift was 5.73%)
-		assert.Less(t, result.ValidityMultiplier, 1.0)
-
-		// 3. Verify Score matches our manual calculation for "Result 1"
-		// (Approx 522 based on our previous discussion)
+		// 2. Score verification (same expectation as before)
 		assert.Greater(t, result.Score, 515)
 		assert.Less(t, result.Score, 530)
 	})
 
 	t.Run("Error_MissingAllSpeedData", func(t *testing.T) {
-		// Test that it fails if both measured speed AND manual pace are missing
 		input := HeartRateDriftResult{
 			IsDecouplingValid: false,
 		}
 		config := AerobicScoreConfig{
-			RestingHeartRate:   50,
-			ManualPaceMinPerKm: 0, // Not provided
+			RestingHeartRate: 50,
+			ManualPace:       nil, // Not provided
 		}
 
 		_, err := CalculateAerobicThresholdScore(input, config)

@@ -1059,12 +1059,18 @@ func round(val float64) float64 {
 }
 
 // --- Aerobic Threshold Scoring (Garmin/Uphill Athlete Style) ---
+//
+
+type Pace struct {
+	Minutes int
+	Seconds int
+}
 
 // AerobicScoreConfig defines parameters for the AeT score calculation
 type AerobicScoreConfig struct {
-	RestingHeartRate   int     // Essential for HRR calculation
-	InclinePercent     float64 // e.g., 7.0 for 7% incline. Used for GAP.
-	ManualPaceMinPerKm float64 // Optional: User provided pace (e.g., 8.0 for 8:00/km). Overrides measured speed.
+	RestingHeartRate int     // Essential for HRR calculation
+	InclinePercent   float64 // e.g., 7.0 for 7% incline. Used for GAP.
+	ManualPace       *Pace   // Optional: User provided pace (e.g. {8, 0} for 8:00/km). Overrides measured speed.
 }
 
 // AerobicScoreResult contains the final score and its components
@@ -1083,10 +1089,15 @@ type AerobicScoreResult struct {
 func CalculateAerobicThresholdScore(driftResult HeartRateDriftResult, config AerobicScoreConfig) (AerobicScoreResult, error) {
 	var avgSpeedMMin float64
 
-	if config.ManualPaceMinPerKm > 0 {
+	if config.ManualPace != nil {
+		totalMinutes := float64(config.ManualPace.Minutes) + float64(config.ManualPace.Seconds)/60.0
+		if totalMinutes <= 0 {
+			return AerobicScoreResult{}, ErrMissingSpeedData
+		}
+
 		// Convert min/km to m/min
-		// Formula: 1000 meters / minutes
-		avgSpeedMMin = 1000.0 / config.ManualPaceMinPerKm
+		// Formula: 1000 meters / total minutes
+		avgSpeedMMin = 1000.0 / totalMinutes
 	} else if driftResult.IsDecouplingValid {
 		// Convert m/s (standard input) to m/min
 		avgSpeedMPS := (driftResult.FirstHalfAvgOutput + driftResult.SecondHalfAvgOutput) / 2.0
