@@ -124,3 +124,52 @@ func (a ActivityTimeseriesEntry) IsEmpty() bool {
 func (a ActivityTimeseriesEntry) HasGPS() bool {
 	return a.Latitude.Valid && a.Longitude.Valid
 }
+
+// AugmentGPXData fills in missing Distance, Speed, Moving Time, and Ascent/Descent.
+func AugmentGPXData(act *Activity, ts *ActivityTimeseries) {
+	var totalDist float64
+	var gain float64
+	var loss float64
+	var movingSeconds uint32
+
+	for i := 1; i < len(ts.Data); i++ {
+		prev := ts.Data[i-1]
+		curr := &ts.Data[i]
+
+		if curr.HasGPS() && prev.HasGPS() {
+			d := haversine(prev.Latitude.Value, prev.Longitude.Value, curr.Latitude.Value, curr.Longitude.Value)
+			totalDist += d
+			curr.Distance = Optional[uint32]{Value: uint32(totalDist), Valid: true}
+
+			timeDelta := float64(curr.Offset - prev.Offset)
+			if timeDelta > 0 {
+				speed := d / timeDelta
+				curr.Velocity = Optional[uint16]{Value: uint16(speed * 1000), Valid: true} // Storing as mm/s
+
+				// Moving time threshold (approx > 1.8 km/h)
+				if speed > 0.5 {
+					movingSeconds += uint32(timeDelta)
+				}
+			}
+		}
+
+		// Simple Elevation Gain/Loss with a 1-meter hysteresis filter to ignore jitter
+		if curr.Altitude.Valid && prev.Altitude.Valid {
+			deltaZ := float64(curr.Altitude.Value) - float64(prev.Altitude.Value)
+			if deltaZ > 1.0 {
+				gain += deltaZ
+			} else if deltaZ < -1.0 {
+				loss -= deltaZ // absolute value
+			}
+		}
+	}
+
+	act.Distance = uint32(totalDist)
+	act.MovingTime = movingSeconds
+	act.ElevationGain = Optional[uint16]{Value: uint16(gain), Valid: true}
+	act.ElevationLoss = Optional[uint16]{Value: uint16(loss), Valid: true}
+
+	if movingSeconds > 0 {
+		act.AvgSpeed = uint16((totalDist / float64(movingSeconds)) * 1000) // mm/s
+	}
+}
