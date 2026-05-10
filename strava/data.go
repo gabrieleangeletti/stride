@@ -384,7 +384,7 @@ func (s *ActivityStream) ToTimeseries(startTime time.Time) (*stride.ActivityTime
 		}
 
 		if i < len(s.Altitude.Data) {
-			data.Altitude = stride.Optional[uint16]{Value: uint16(s.Altitude.Data[i]), Valid: s.Altitude.Data[i] > 0}
+			data.Altitude = stride.Optional[float64]{Value: s.Altitude.Data[i], Valid: s.Altitude.Data[i] > 0}
 		}
 
 		if i < len(s.VelocitySmooth.Data) {

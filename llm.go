@@ -167,7 +167,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 	var segmentStartElev float64
 	var segmentStartDist float64
 	if ts.Data[0].Altitude.Valid {
-		segmentStartElev = float64(ts.Data[0].Altitude.Value)
+		segmentStartElev = ts.Data[0].Altitude.Value
 	}
 	if len(ts.Data) > 0 && ts.Data[0].Distance.Valid {
 		segmentStartDist = float64(ts.Data[0].Distance.Value)
@@ -198,7 +198,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 		}
 
 		deltaDist := float64(curr.Distance.Value - prevWindow.Distance.Value)
-		deltaElev := float64(curr.Altitude.Value) - float64(prevWindow.Altitude.Value)
+		deltaElev := curr.Altitude.Value - prevWindow.Altitude.Value
 
 		// Determine speed & GAP
 		actualSpeed := 0.0
@@ -285,7 +285,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 
 		// B. Topographic Segmentation (ClimbPro logic)
 		// Accumulate elevation from start of current phase
-		segmentElevChange := float64(curr.Altitude.Value) - segmentStartElev
+		segmentElevChange := curr.Altitude.Value - segmentStartElev
 
 		isClimbing := segmentElevChange > config.PhaseThresholdM
 		isDescending := segmentElevChange < -config.PhaseThresholdM
@@ -293,12 +293,12 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 		if isClimbing && currentSegment.Type != "Uphill" {
 			finalizeSegment(&summary.TopoSplits, &currentSegment, segmentStartElev, segmentStartDist, curr, config)
 			currentSegment = TopographicSplit{Type: "Uphill"}
-			segmentStartElev = float64(curr.Altitude.Value)
+			segmentStartElev = curr.Altitude.Value
 			segmentStartDist = float64(curr.Distance.Value)
 		} else if isDescending && currentSegment.Type != "Downhill" {
 			finalizeSegment(&summary.TopoSplits, &currentSegment, segmentStartElev, segmentStartDist, curr, config)
 			currentSegment = TopographicSplit{Type: "Downhill"}
-			segmentStartElev = float64(curr.Altitude.Value)
+			segmentStartElev = curr.Altitude.Value
 			segmentStartDist = float64(curr.Distance.Value)
 		}
 
@@ -373,7 +373,7 @@ func finalizeSegment(splits *[]TopographicSplit, seg *TopographicSplit, startEle
 
 	seg.DistKm = deltaDist / 1000.0
 
-	deltaElev := float64(curr.Altitude.Value) - startElev
+	deltaElev := curr.Altitude.Value - startElev
 	seg.GradePct = math.Round(deltaElev/deltaDist*100*10) / 10
 
 	if seg.pointsCount > 0 {

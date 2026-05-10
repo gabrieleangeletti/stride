@@ -86,7 +86,7 @@ func CreateFITFileInMemory(data *Activity, ts *ActivityTimeseries, sport Sport) 
 		}
 
 		if d.Altitude.Valid {
-			record = record.SetAltitude(d.Altitude.Value)
+			record = record.SetAltitudeScaled(d.Altitude.Value)
 		}
 
 		if d.Cadence.Valid {
@@ -140,7 +140,7 @@ func FITFileToActivityTimeseries(data []byte) (*ActivityTimeseries, error) {
 			HeartRate: Optional[uint8]{Value: record.HeartRate, Valid: record.HeartRate > 0},
 			Cadence:   Optional[uint8]{Value: record.Cadence, Valid: record.Cadence > 0},
 			Velocity:  Optional[uint16]{Value: uint16(record.SpeedScaled()), Valid: !math.IsNaN(record.SpeedScaled())},
-			Altitude:  Optional[uint16]{Value: uint16(record.AltitudeScaled()), Valid: !math.IsNaN(record.AltitudeScaled())},
+			Altitude:  Optional[float64]{Value: record.AltitudeScaled(), Valid: !math.IsNaN(record.AltitudeScaled())},
 			Distance:  Optional[uint32]{Value: uint32(record.DistanceScaled()), Valid: !math.IsNaN(record.DistanceScaled())},
 		}
 

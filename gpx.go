@@ -52,7 +52,7 @@ func CreateGPXFileInMemory(act *Activity, ts *ActivityTimeseries) ([]byte, error
 		}
 
 		if d.Altitude.Valid {
-			elevation := float64(d.Altitude.Value)
+			elevation := d.Altitude.Value
 			point.Point.Elevation = *gpx.NewNullableFloat64(elevation)
 		}
 
@@ -120,7 +120,7 @@ func ParseGPXFileFromMemory(data []byte) (*Activity, *ActivityTimeseries, error)
 		}
 
 		if !math.IsNaN(p.Point.Elevation.Value()) {
-			entry.Altitude = Optional[uint16]{Value: uint16(p.Point.Elevation.Value()), Valid: true}
+			entry.Altitude = Optional[float64]{Value: p.Point.Elevation.Value(), Valid: true}
 		}
 
 		for _, ext := range p.Extensions.Nodes {
