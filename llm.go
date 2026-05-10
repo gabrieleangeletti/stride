@@ -72,7 +72,8 @@ type LLMSummaryConfig struct {
 	GradeUpThreshold    float64 // Grade % above which is considered uphill terrain. Default 2.0.
 	GradeDownThreshold  float64 // Grade % below which is considered downhill terrain. Default -2.0.
 	GradeSteepDownBelow float64 // Grade % below which is considered steep downhill. Default -10.0.
-	GradeHikeUpAbove    float64 // Grade % above which is considered hike up. Default 8.0.
+	GradeHikeUpAbove     float64 // Grade % above which is considered hike up. Default 8.0.
+	ElevationHysteresisM float64 // Minimum cumulative elevation change (meters) for ascent/descent. Default 3.0.
 }
 
 func (c LLMSummaryConfig) ApplyDefaults() LLMSummaryConfig {
@@ -120,6 +121,9 @@ func (c LLMSummaryConfig) ApplyDefaults() LLMSummaryConfig {
 	if config.GradeHikeUpAbove == 0 {
 		config.GradeHikeUpAbove = 8.0
 	}
+	if config.ElevationHysteresisM == 0 {
+		config.ElevationHysteresisM = 3.0
+	}
 
 	return config
 }
@@ -130,7 +134,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 
 	// First, ensure we have distances and computed metrics
 	if act.Distance == 0 || !ts.Data[len(ts.Data)-1].Distance.Valid {
-		AugmentGPXData(act, ts)
+		AugmentGPXData(act, ts, AugmentConfig{ElevationHysteresisM: config.ElevationHysteresisM})
 	}
 
 	summary := &LLMRunSummary{}

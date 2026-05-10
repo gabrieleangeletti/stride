@@ -125,15 +125,27 @@ func (a ActivityTimeseriesEntry) HasGPS() bool {
 	return a.Latitude.Valid && a.Longitude.Valid
 }
 
+type AugmentConfig struct {
+	ElevationHysteresisM float64 // Minimum cumulative elevation change (meters) to count as real gain/loss. Default 3.0.
+}
+
+func (c AugmentConfig) ApplyDefaults() AugmentConfig {
+	config := c
+	if config.ElevationHysteresisM == 0 {
+		config.ElevationHysteresisM = 3.0
+	}
+	return config
+}
+
 // AugmentGPXData fills in missing Distance, Speed, Moving Time, and Ascent/Descent.
-func AugmentGPXData(act *Activity, ts *ActivityTimeseries) {
+func AugmentGPXData(act *Activity, ts *ActivityTimeseries, config AugmentConfig) {
+	config = config.ApplyDefaults()
+
 	var totalDist float64
 	var totalGain float64
 	var totalLoss float64
 	var runningDelta float64
 	var movingSeconds uint32
-
-	const elevationThreshold = 3.0
 
 	for i := 1; i < len(ts.Data); i++ {
 		prev := ts.Data[i-1]
@@ -164,10 +176,10 @@ func AugmentGPXData(act *Activity, ts *ActivityTimeseries) {
 				runningDelta += deltaZ
 			}
 
-			if runningDelta >= elevationThreshold {
+			if runningDelta >= config.ElevationHysteresisM {
 				totalGain += runningDelta
 				runningDelta = 0
-			} else if runningDelta <= -elevationThreshold {
+			} else if runningDelta <= -config.ElevationHysteresisM {
 				totalLoss -= runningDelta
 				runningDelta = 0
 			}
