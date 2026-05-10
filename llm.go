@@ -35,27 +35,27 @@ type GlobalAverages struct {
 }
 
 type Distributions struct {
-	HRZones           []int `json:"hrZones1To5Pct"`
-	GradeSteepDownPct int   `json:"gradeSteepDown"`
-	GradeRunDownPct   int   `json:"gradeRunDown"`
-	GradeFlatPct      int   `json:"gradeFlat"`
-	GradeRunUpPct     int   `json:"gradeRunUp"`
-	GradeHikeUpPct    int   `json:"gradeHikeUp"`
+	HRZones           []int  `json:"hrZones1To5Pct"`
+	GradeSteepDownPct int    `json:"gradeSteepDown"`
+	GradeRunDownPct   int    `json:"gradeRunDown"`
+	GradeFlatPct      int    `json:"gradeFlat"`
+	GradeRunUpPct     int    `json:"gradeRunUp"`
+	GradeHikeUpPct    int    `json:"gradeHikeUp"`
 	Z2AvgPace         string `json:"z2AvgPace"`
 	Z2AvgGAP          string `json:"z2AvgGap"`
 }
 
 type TerrainPerformance struct {
-	UphillAvgHR              int            `json:"uphillAvgHr"`
-	UphillAvgGAP             string         `json:"uphillAvgGap"`
-	UphillHRStdDev           float64        `json:"uphillHrStdDev"`
-	UphillVAM                int            `json:"uphillVam"`
-	DownhillAvgHR            int            `json:"downhillAvgHr"`
-	DownhillAvgPace          string         `json:"downhillAvgPace"`
-	DownhillEfficiency       float64        `json:"downhillEfficiency"`
+	UphillAvgHR               int           `json:"uphillAvgHr"`
+	UphillAvgGAP              string        `json:"uphillAvgGap"`
+	UphillHRStdDev            float64       `json:"uphillHrStdDev"`
+	UphillVAM                 int           `json:"uphillVam"`
+	DownhillAvgHR             int           `json:"downhillAvgHr"`
+	DownhillAvgPace           string        `json:"downhillAvgPace"`
+	DownhillEfficiency        float64       `json:"downhillEfficiency"`
 	HikeRunTransitionGradePct float64       `json:"hikeRunTransitionGradePct"`
-	VAMByGradient            []GradientVAM  `json:"vamByGradient"`
-	DownhillPaceByGrade      []GradePace    `json:"downhillPaceByGrade"`
+	VAMByGradient             []GradientVAM `json:"vamByGradient"`
+	DownhillPaceByGrade       []GradePace   `json:"downhillPaceByGrade"`
 }
 
 type DecouplingDetail struct {
@@ -68,16 +68,16 @@ type DecouplingDetail struct {
 }
 
 type ZoneDetail struct {
-	Zone   int    `json:"zone"`
-	PctTime int   `json:"pctTime"`
-	AvgGAP string `json:"avgGap"`
-	AvgHR  int    `json:"avgHr"`
+	Zone    int    `json:"zone"`
+	PctTime int    `json:"pctTime"`
+	AvgGAP  string `json:"avgGap"`
+	AvgHR   int    `json:"avgHr"`
 }
 
 type GAPBenchmark struct {
-	Range  string `json:"range"`
-	AvgHR  int    `json:"avgHr"`
-	Count  int    `json:"count"`
+	Range string `json:"range"`
+	AvgHR int    `json:"avgHr"`
+	Count int    `json:"count"`
 }
 
 type EndOfRunMetrics struct {
@@ -87,8 +87,8 @@ type EndOfRunMetrics struct {
 }
 
 type RecoveryMetrics struct {
-	EndHRDrop60s            int `json:"endHrDrop60s"`
-	PostMaxEffortHRDrop60s  int `json:"postMaxEffortHrDrop60s"`
+	EndHRDrop60s           int `json:"endHrDrop60s"`
+	PostMaxEffortHRDrop60s int `json:"postMaxEffortHrDrop60s"`
 }
 
 type EconomyMetrics struct {
@@ -104,15 +104,16 @@ type AthleteBaseline struct {
 }
 
 type ThresholdMetrics struct {
-	Z4Z5AvgGAP          string `json:"z4z5AvgGap"`
-	LongestZ4BlockSec   int    `json:"longestZ4BlockSec"`
+	Z4Z5AvgGAP        string `json:"z4z5AvgGap"`
+	LongestZ4BlockSec int    `json:"longestZ4BlockSec"`
+	ZoneThresholds    []int  `json:"zoneHrThresholds"`
 }
 
 type GradientVAM struct {
-	Band   string `json:"band"`
-	VAM    int    `json:"vam"`
-	AvgHR  int    `json:"avgHr"`
-	PctTime int   `json:"pctTime"`
+	Band    string `json:"band"`
+	VAM     int    `json:"vam"`
+	AvgHR   int    `json:"avgHr"`
+	PctTime int    `json:"pctTime"`
 }
 
 type GradePace struct {
@@ -134,22 +135,17 @@ type TopographicSplit struct {
 }
 
 type LLMSummaryConfig struct {
-	GradeSmoothingWindow int     // Default 15.
-	MinGradeDeltaM       float64 // Default 5.0.
-	MinMovingSpeedMS     float64 // Default 0.5.
-	PhaseThresholdM      float64 // Default 30.0.
-	MinSegmentDistM      float64 // Default 100.
-	DefaultMaxHR         int     // Default 190.
-	HRZone1Threshold     float64 // Default 0.60.
-	HRZone2Threshold     float64 // Default 0.70.
-	HRZone3Threshold     float64 // Default 0.80.
-	HRZone4Threshold     float64 // Default 0.90.
-	GradeUpThreshold     float64 // Default 2.0.
-	GradeDownThreshold   float64 // Default -2.0.
-	GradeSteepDownBelow  float64 // Default -10.0.
-	GradeHikeUpAbove     float64 // Default 8.0.
-	ElevationHysteresisM float64          // Default 3.0.
-	Athlete              AthleteBaseline  // Optional: copied to output as-is.
+	GradeSmoothingWindow int             // Default 15.
+	MinGradeDeltaM       float64         // Default 5.0.
+	MinMovingSpeedMS     float64         // Default 0.5.
+	PhaseThresholdM      float64         // Default 30.0.
+	MinSegmentDistM      float64         // Default 100.
+	GradeUpThreshold     float64         // Default 2.0.
+	GradeDownThreshold   float64         // Default -2.0.
+	GradeSteepDownBelow  float64         // Default -10.0.
+	GradeHikeUpAbove     float64         // Default 8.0.
+	ElevationHysteresisM float64         // Default 3.0.
+	Athlete              AthleteBaseline // Optional: copied to output as-is.
 }
 
 func (c LLMSummaryConfig) ApplyDefaults() LLMSummaryConfig {
@@ -169,21 +165,6 @@ func (c LLMSummaryConfig) ApplyDefaults() LLMSummaryConfig {
 	}
 	if config.MinSegmentDistM == 0 {
 		config.MinSegmentDistM = 100.0
-	}
-	if config.DefaultMaxHR == 0 {
-		config.DefaultMaxHR = 190
-	}
-	if config.HRZone1Threshold == 0 {
-		config.HRZone1Threshold = 0.60
-	}
-	if config.HRZone2Threshold == 0 {
-		config.HRZone2Threshold = 0.70
-	}
-	if config.HRZone3Threshold == 0 {
-		config.HRZone3Threshold = 0.80
-	}
-	if config.HRZone4Threshold == 0 {
-		config.HRZone4Threshold = 0.90
 	}
 	if config.GradeUpThreshold == 0 {
 		config.GradeUpThreshold = 2.0
@@ -272,10 +253,26 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 		summary.GlobalAverages.HRAvg = int(hrMetrics.AvgHR)
 		summary.GlobalAverages.HRMax = int(hrMetrics.MaxHR)
 	}
-	maxHR := float64(summary.GlobalAverages.HRMax)
+	maxHR := float64(config.Athlete.MaxHR)
 	if maxHR == 0 {
-		maxHR = float64(config.DefaultMaxHR)
+		maxHR = float64(summary.GlobalAverages.HRMax)
 	}
+	if maxHR == 0 {
+		maxHR = 190
+	}
+
+	z1Max := float64(config.Athlete.AeTHR) * 0.9
+	z2Max := float64(config.Athlete.AeTHR)
+	if config.Athlete.AeTHR == 0 {
+		z1Max = maxHR * 0.60
+		z2Max = maxHR * 0.70
+	}
+	z3Max := float64(config.Athlete.AnTHR)
+	if config.Athlete.AnTHR == 0 {
+		z3Max = maxHR * 0.80
+	}
+	z4Max := maxHR * 0.95
+	summary.Thresholds.ZoneThresholds = []int{int(z1Max), int(z2Max), int(z3Max), int(z4Max)}
 
 	if act.AvgSpeed > 0 {
 		summary.GlobalAverages.PaceAvg = formatPace(float64(act.AvgSpeed) / 1000.0)
@@ -299,7 +296,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 		segmentStartDist = float64(ts.Data[0].Distance.Value)
 	}
 
-	var upHrSum, upHrSqSum, upGapSum, upCount, upElevGain, upTime float64
+	var upHrSum, upHrSqSum, upGapSum, upCount, upElevGain, upTime, upDist float64
 	var downHrSum, downPaceSum, downCount float64
 
 	type DecoupleState struct{ hrSum, speedSum, count float64 }
@@ -413,27 +410,27 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 			}
 
 			// GAP benchmark accumulation
+			matched := false
 			for b := 0; b < len(gapBenchmarkThresholds)-1; b++ {
 				if gapSpeed >= gapBenchmarkThresholds[b].speed {
 					if curr.HeartRate.Valid {
 						gapBandHRSum[b] += float64(curr.HeartRate.Value)
 						gapBandCount[b]++
 					}
+					matched = true
 					break
 				}
 			}
-			if gapSpeed < gapBenchmarkThresholds[len(gapBenchmarkThresholds)-2].speed {
+			if !matched && curr.HeartRate.Valid {
 				last := len(gapBenchmarkThresholds) - 1
-				if curr.HeartRate.Valid {
-					gapBandHRSum[last] += float64(curr.HeartRate.Value)
-					gapBandCount[last]++
-				}
+				gapBandHRSum[last] += float64(curr.HeartRate.Value)
+				gapBandCount[last]++
 			}
 
-			// Z2-only (60-70% maxHR)
+			// Z2-only
 			if curr.HeartRate.Valid {
-				hrPct := float64(curr.HeartRate.Value) / maxHR
-				if hrPct >= config.HRZone1Threshold && hrPct < config.HRZone2Threshold {
+				hr := float64(curr.HeartRate.Value)
+				if hr >= z1Max && hr < z2Max {
 					z2PaceSum += actualSpeed
 					z2GAPSum += gapSpeed
 					z2Count++
@@ -442,8 +439,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 
 			// Z4+Z5 threshold accumulation
 			if curr.HeartRate.Valid {
-				hrPct := float64(curr.HeartRate.Value) / maxHR
-				if hrPct >= config.HRZone3Threshold {
+				if float64(curr.HeartRate.Value) >= z3Max {
 					currentZ4BlockSec += int(timeDelta)
 					z4z5GAPSum += gapSpeed
 					z4z5Count++
@@ -484,16 +480,15 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 
 		if curr.HeartRate.Valid {
 			hr := float64(curr.HeartRate.Value)
-			pctMax := hr / maxHR
 			zoneIdx := 4
 			switch {
-			case pctMax < config.HRZone1Threshold:
+			case hr < z1Max:
 				zoneIdx = 0
-			case pctMax < config.HRZone2Threshold:
+			case hr < z2Max:
 				zoneIdx = 1
-			case pctMax < config.HRZone3Threshold:
+			case hr < z3Max:
 				zoneIdx = 2
-			case pctMax < config.HRZone4Threshold:
+			case hr < z4Max:
 				zoneIdx = 3
 			}
 			hrZoneCounters[zoneIdx]++
@@ -515,6 +510,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 				upGapSum += gapSpeed
 				upCount++
 				upElevGain += deltaElev
+				upDist += deltaDist
 				upTime += timeDelta
 
 				for b := range vamBands {
@@ -535,19 +531,6 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 						}
 					} else if gradePct > config.GradeUpThreshold {
 						hikeTransitionFound = true
-					}
-				}
-
-				// Uphill decoupling
-				if uphillHalfIndex == 0 {
-					if float64(curr.Distance.Value) < halfIndex {
-						uphillFirstHalf.hrSum += hr
-						uphillFirstHalf.speedSum += gapSpeed
-						uphillFirstHalf.count++
-					} else {
-						uphillSecondHalf.hrSum += hr
-						uphillSecondHalf.speedSum += gapSpeed
-						uphillSecondHalf.count++
 					}
 				}
 
@@ -618,6 +601,48 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 		longestZ4BlockSec = currentZ4BlockSec
 	}
 
+	if upDist > 0 {
+		uphillHalfIndex = upDist / 2
+		var cumulativeUpDist float64
+		uphillFirstHalf = DecoupleState{}
+		uphillSecondHalf = DecoupleState{}
+		for i := windowSize; i < len(ts.Data); i++ {
+			curr := ts.Data[i]
+			prevWindow := ts.Data[i-windowSize]
+			if !curr.Distance.Valid || !prevWindow.Distance.Valid || !curr.Altitude.Valid || !prevWindow.Altitude.Valid {
+				continue
+			}
+			deltaDist := float64(curr.Distance.Value - prevWindow.Distance.Value)
+			deltaElev := curr.Altitude.Value - prevWindow.Altitude.Value
+			if deltaDist <= config.MinGradeDeltaM {
+				continue
+			}
+			gradePct := (deltaElev / deltaDist) * 100.0
+			if gradePct <= config.GradeUpThreshold {
+				continue
+			}
+			actualSpeed := 0.0
+			timeDelta := float64(curr.Offset - prevWindow.Offset)
+			if deltaDist > 0 && timeDelta > 0 {
+				actualSpeed = deltaDist / timeDelta
+			}
+			if actualSpeed <= config.MinMovingSpeedMS || !curr.HeartRate.Valid {
+				continue
+			}
+			gapSpeed := calculateGAP(actualSpeed, deltaElev/deltaDist)
+			cumulativeUpDist += deltaDist
+			if cumulativeUpDist <= uphillHalfIndex {
+				uphillFirstHalf.hrSum += float64(curr.HeartRate.Value)
+				uphillFirstHalf.speedSum += gapSpeed
+				uphillFirstHalf.count++
+			} else {
+				uphillSecondHalf.hrSum += float64(curr.HeartRate.Value)
+				uphillSecondHalf.speedSum += gapSpeed
+				uphillSecondHalf.count++
+			}
+		}
+	}
+
 	// ===== Post-processing calculations =====
 
 	if gapPoints > 0 {
@@ -670,9 +695,9 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 	for b := range gapBenchmarkThresholds {
 		if gapBandCount[b] > 0 {
 			summary.GAPBenchmarks = append(summary.GAPBenchmarks, GAPBenchmark{
-				Range:  gapBenchmarkThresholds[b].label,
-				AvgHR:  int(gapBandHRSum[b] / float64(gapBandCount[b])),
-				Count:  gapBandCount[b],
+				Range: gapBenchmarkThresholds[b].label,
+				AvgHR: int(gapBandHRSum[b] / float64(gapBandCount[b])),
+				Count: gapBandCount[b],
 			})
 		}
 	}
@@ -699,6 +724,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 
 	// VAM by gradient band
 	totalUpTime := 0
+	var vamOutputBandIdx []int
 	for b := range vamBands {
 		if vamTime[b] > 0 {
 			vam := int((vamGain[b] / vamTime[b]) * 3600.0)
@@ -711,13 +737,14 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 				VAM:   vam,
 				AvgHR: avgHR,
 			})
+			vamOutputBandIdx = append(vamOutputBandIdx, b)
 			totalUpTime += int(vamTime[b])
 		}
 	}
-	// Fill in pctTime for VAM bands
-	for b := range summary.TerrainStats.VAMByGradient {
+	for i := range summary.TerrainStats.VAMByGradient {
+		b := vamOutputBandIdx[i]
 		if totalUpTime > 0 && vamTime[b] > 0 {
-			summary.TerrainStats.VAMByGradient[b].PctTime = (int(vamTime[b]) * 100) / totalUpTime
+			summary.TerrainStats.VAMByGradient[i].PctTime = (int(vamTime[b]) * 100) / totalUpTime
 		}
 	}
 
@@ -753,7 +780,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 		summary.Decoupling.SecondHalfAvgGAP = formatPace(secondHalf.speedSum / secondHalf.count)
 	}
 
-	if uphillHalfIndex == 0 && uphillFirstHalf.count > 0 && uphillSecondHalf.count > 0 {
+	if uphillFirstHalf.count > 0 && uphillSecondHalf.count > 0 {
 		uef1 := (uphillFirstHalf.speedSum / uphillFirstHalf.count) / (uphillFirstHalf.hrSum / uphillFirstHalf.count)
 		uef2 := (uphillSecondHalf.speedSum / uphillSecondHalf.count) / (uphillSecondHalf.hrSum / uphillSecondHalf.count)
 		if uef1 > 0 {
