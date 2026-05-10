@@ -156,9 +156,9 @@ func AugmentGPXData(act *Activity, ts *ActivityTimeseries) {
 		// Simple Elevation Gain/Loss with a 1-meter hysteresis filter to ignore jitter
 		if curr.Altitude.Valid && prev.Altitude.Valid {
 			deltaZ := float64(curr.Altitude.Value) - float64(prev.Altitude.Value)
-			if deltaZ > 1.0 {
+			if deltaZ >= 1.0 {
 				gain += deltaZ
-			} else if deltaZ < -1.0 {
+			} else if deltaZ <= -1.0 {
 				loss -= deltaZ // absolute value
 			}
 		}
