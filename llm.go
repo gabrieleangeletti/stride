@@ -71,7 +71,7 @@ type ZoneDetail struct {
 	Zone    int    `json:"zone"`
 	PctTime int    `json:"pctTime"`
 	AvgGAP  string `json:"avgGap,omitempty"`
-	AvgHR   int    `json:"avgHr"`
+	AvgHR   int    `json:"avgHr,omitempty"`
 }
 
 type GAPBenchmark struct {
@@ -104,7 +104,7 @@ type AthleteBaseline struct {
 }
 
 type ThresholdMetrics struct {
-	Z4Z5AvgGAP        string `json:"z4z5AvgGap"`
+	Z4Z5AvgGAP        string `json:"z4z5AvgGap,omitempty"`
 	LongestZ4BlockSec int    `json:"longestZ4BlockSec"`
 	ZoneThresholds    []int  `json:"zoneHrThresholds"`
 }
