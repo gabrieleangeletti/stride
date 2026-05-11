@@ -7,7 +7,7 @@ import (
 
 // formatPace helper converts speed (m/s) into standard MM:SS/km pace
 func formatPace(speedMs float64) string {
-	if speedMs <= 0.2 { // Slower than 83 min/km
+	if speedMs <= 0.2 || math.IsNaN(speedMs) { // Slower than 83 min/km
 		return "0:00"
 	}
 

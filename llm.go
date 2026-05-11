@@ -70,7 +70,7 @@ type DecouplingDetail struct {
 type ZoneDetail struct {
 	Zone    int    `json:"zone"`
 	PctTime int    `json:"pctTime"`
-	AvgGAP  string `json:"avgGap"`
+	AvgGAP  string `json:"avgGap,omitempty"`
 	AvgHR   int    `json:"avgHr"`
 }
 
@@ -373,6 +373,7 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 	maxEffortOffset := 0
 	totalUpElevGain := 0.0
 	totalUpTime := 0.0
+	smoothedRunGrade := 0.0
 
 	for _, pt := range enriched {
 		if pt.ActualSpeed <= config.MinMovingSpeedMS {
@@ -420,9 +421,14 @@ func SummarizeForLLM(act *Activity, ts *ActivityTimeseries, config LLMSummaryCon
 
 			// Hike/Run Transition
 			if pt.Entry.Cadence.Valid && !hikeTransitionFound {
-				if float64(pt.Entry.Cadence.Value) >= 70 {
-					if pt.GradePct > maxRunGrade {
-						maxRunGrade = pt.GradePct
+				cad := float64(pt.Entry.Cadence.Value)
+				// True if running RPM (70-100) OR running SPM (140-200+)
+				isRunning := (cad >= 70 && cad <= 100) || (cad >= 140)
+
+				if isRunning {
+					smoothedRunGrade = (pt.GradePct * 0.1) + (smoothedRunGrade * 0.9)
+					if smoothedRunGrade > maxRunGrade {
+						maxRunGrade = smoothedRunGrade
 					}
 				} else {
 					hikeTransitionFound = true
