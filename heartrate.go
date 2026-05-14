@@ -45,6 +45,9 @@ var (
 	ErrEmptyTimeseriesData   = errors.New("activity timeseries data is empty")
 	ErrNoValidData           = errors.New("no valid heart rate data points found")
 	ErrInsufficientDriftData = errors.New("insufficient data for drift analysis after warmup filtering")
+	ErrMissingMaxHR          = errors.New("missing athlete maxHr")
+	ErrMissingAeTHR          = errors.New("missing athlete aerobic threshold")
+	ErrMissingAnTHR          = errors.New("missing athlete anaerobic threshold")
 	ErrInvalidRestingHR      = errors.New("resting heart rate must be lower than average heart rate")
 	ErrMissingSpeedData      = errors.New("cannot calculate score without valid speed data")
 )
@@ -1141,6 +1144,78 @@ func CalculateAerobicThresholdScore(driftResult HeartRateDriftResult, config Aer
 		ValidityMultiplier: round(validityMultiplier),
 		IsScoreValid:       true,
 	}, nil
+}
+
+// ComputeTimeInZones returns the number of seconds spent in each heart rate zone (1-5).
+func ComputeTimeInZones(ts *ActivityTimeseries, athlete AthleteBaseline) (map[int]int, error) {
+	if athlete.MaxHR <= 0 {
+		return nil, fmt.Errorf("%w", ErrMissingMaxHR)
+	}
+
+	if athlete.AeTHR <= 0 {
+		return nil, fmt.Errorf("%w", ErrMissingAeTHR)
+	}
+
+	if athlete.AnTHR <= 0 {
+		return nil, fmt.Errorf("%w", ErrMissingAnTHR)
+	}
+
+	var z1Max, z2Max, z3Max, z4Max float64
+
+	z2Max = float64(athlete.AeTHR)
+	z1Max = z2Max * 0.9
+	z3Max = float64(athlete.AnTHR)
+	z4Max = float64(athlete.MaxHR) * 0.95
+
+	result := map[int]int{1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+	if len(ts.Data) == 0 {
+		return result, nil
+	}
+
+	for i := 0; i < len(ts.Data); i++ {
+		curr := ts.Data[i]
+		if !curr.HeartRate.Valid {
+			continue
+		}
+
+		var duration int
+		if i < len(ts.Data)-1 {
+			next := ts.Data[i+1]
+			delta := next.Offset - curr.Offset
+
+			// Gap Handling: If the gap is > 10s, we assume the device was
+			// paused or signal was lost. We only credit 1 second for the
+			// current reading rather than the whole gap.
+			if delta > 10 {
+				duration = 1
+			} else if delta <= 0 {
+				continue // Skip malformed/duplicate offsets
+			} else {
+				duration = delta
+			}
+		} else {
+			// The final sample: give it 1 second of credit so it's not ignored
+			duration = 1
+		}
+
+		hr := float64(curr.HeartRate.Value)
+		zone := 5
+		switch {
+		case hr < z1Max:
+			zone = 1
+		case hr < z2Max:
+			zone = 2
+		case hr < z3Max:
+			zone = 3
+		case hr < z4Max:
+			zone = 4
+		}
+
+		result[zone] += duration
+	}
+
+	return result, nil
 }
 
 // calculateMinettiGAP converts uphill speed to equivalent flat speed based on metabolic cost.

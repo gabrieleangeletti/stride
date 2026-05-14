@@ -1,6 +1,8 @@
 package stride_test
 
 import (
+	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -1005,4 +1007,114 @@ func TestCalculateAerobicThresholdScore(t *testing.T) {
 		_, err := CalculateAerobicThresholdScore(input, config)
 		assert.ErrorIs(t, err, ErrInvalidRestingHR)
 	})
+}
+
+func TestComputeTimeInZones(t *testing.T) {
+	// Setup standard baseline
+	standardBaseline := AthleteBaseline{
+		MaxHR: 200,
+		AeTHR: 150,
+		AnTHR: 180,
+	}
+
+	// Thresholds based on logic:
+	// z1Max = 135 (150 * 0.9)
+	// z2Max = 150
+	// z3Max = 180
+	// z4Max = 190 (200 * 0.95)
+
+	tests := []struct {
+		name    string
+		ts      *ActivityTimeseries
+		athlete AthleteBaseline
+		want    map[int]int
+		wantErr error
+	}{
+		{
+			name:    "Success: Normal Activity",
+			athlete: standardBaseline,
+			ts: &ActivityTimeseries{
+				Data: []ActivityTimeseriesEntry{
+					{Offset: 0, HeartRate: Optional[uint8]{Value: 130, Valid: true}}, // Zone 1 (1s)
+					{Offset: 1, HeartRate: Optional[uint8]{Value: 140, Valid: true}}, // Zone 2 (1s)
+					{Offset: 2, HeartRate: Optional[uint8]{Value: 160, Valid: true}}, // Zone 3 (1s)
+					{Offset: 3, HeartRate: Optional[uint8]{Value: 185, Valid: true}}, // Zone 4 (1s)
+					{Offset: 4, HeartRate: Optional[uint8]{Value: 195, Valid: true}}, // Zone 5 (1s)
+				},
+			},
+			want: map[int]int{1: 1, 2: 1, 3: 1, 4: 1, 5: 1},
+		},
+		{
+			name:    "Gaps: Delta > 10s should credit only 1s",
+			athlete: standardBaseline,
+			ts: &ActivityTimeseries{
+				Data: []ActivityTimeseriesEntry{
+					{Offset: 0, HeartRate: Optional[uint8]{Value: 160, Valid: true}},   // Zone 3
+					{Offset: 100, HeartRate: Optional[uint8]{Value: 160, Valid: true}}, // Zone 3
+				},
+			},
+			want: map[int]int{1: 0, 2: 0, 3: 2, 4: 0, 5: 0}, // 1s for gap, 1s for last sample
+		},
+		{
+			name:    "Invalid Data: Skip invalid HR samples",
+			athlete: standardBaseline,
+			ts: &ActivityTimeseries{
+				Data: []ActivityTimeseriesEntry{
+					{Offset: 0, HeartRate: Optional[uint8]{Value: 160, Valid: true}},  // Zone 3 (1s)
+					{Offset: 1, HeartRate: Optional[uint8]{Value: 160, Valid: false}}, // Skipped
+					{Offset: 2, HeartRate: Optional[uint8]{Value: 160, Valid: true}},  // Zone 3 (1s)
+				},
+			},
+			want: map[int]int{1: 0, 2: 0, 3: 2, 4: 0, 5: 0},
+		},
+		{
+			name:    "Error: Missing MaxHR",
+			athlete: AthleteBaseline{MaxHR: 0, AeTHR: 150, AnTHR: 180},
+			ts:      &ActivityTimeseries{},
+			wantErr: ErrMissingMaxHR,
+		},
+		{
+			name:    "Error: Missing AeTHR",
+			athlete: AthleteBaseline{MaxHR: 200, AeTHR: 0, AnTHR: 180},
+			ts:      &ActivityTimeseries{},
+			wantErr: ErrMissingAeTHR,
+		},
+		{
+			name:    "Empty Timeseries: Should return empty map",
+			athlete: standardBaseline,
+			ts:      &ActivityTimeseries{Data: []ActivityTimeseriesEntry{}},
+			want:    map[int]int{1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
+		},
+		{
+			name:    "Inverted Logic Check: AnTHR lower than AeTHR",
+			athlete: AthleteBaseline{MaxHR: 200, AeTHR: 170, AnTHR: 150},
+			ts: &ActivityTimeseries{
+				Data: []ActivityTimeseriesEntry{
+					{Offset: 0, HeartRate: Optional[uint8]{Value: 160, Valid: true}}, // Zone 2 (because 160 < 170)
+				},
+			},
+			want: map[int]int{1: 0, 2: 1, 3: 0, 4: 0, 5: 0},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ComputeTimeInZones(tt.ts, tt.athlete)
+
+			if tt.wantErr != nil {
+				if !errors.Is(err, tt.wantErr) {
+					t.Errorf("ComputeTimeInZones() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("ComputeTimeInZones() unexpected error: %v", err)
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ComputeTimeInZones() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
